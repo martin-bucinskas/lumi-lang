@@ -1,18 +1,18 @@
 # RFC-01: Lumi Programming Language
 
-**Feature Name:** RFC-01: Lumi Programming Language
-**Date:** 2023-12-24
-**Author:** Martin Bucinskas
-**Status:** DRAFT
+**Feature Name:** RFC-01: Lumi Programming Language<br/>
+**Date:** 2023-12-24<br/>
+**Author:** Martin Bucinskas<br/>
+**Status:** DRAFT<br/>
 
 ## Abstract
 
-Lumi is a general purpose programming language.
+Lumi is a general purpose programming language.<br/>
 Initially built as a tool of learning and understanding in how VM (virtual-machine)
 based languages work and function.
 
-Every language needs to start somewhere. This is the starting-point,
-defining the primitive constructs of the Lumi programming language.
+Every language needs to start somewhere.<br/>
+This is the starting-point, defining the primitive constructs of the Lumi programming language.
 
 ## Table of Contents
 
