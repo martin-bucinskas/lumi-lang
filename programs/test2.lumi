@@ -1,0 +1,14 @@
+.data
+test1: .asciiz 'Hello'
+test2: .asciiz 'World'
+.code
+load $0 #100
+load $1 #1
+load $2 #0
+prts @test1
+prts @test2
+start: inc $2
+eq $0 $2
+djmpe @end
+djmp @start
+end: hlt
