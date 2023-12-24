@@ -15,18 +15,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          override: true
-          toolchain: stable
-          components: rustfmt, clippy
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Build
         run: cargo build --verbose
+
+      - name: Lint
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-features
+
       - name: Run tests
         run: cargo test --verbose
