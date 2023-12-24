@@ -29,12 +29,12 @@ This is the starting-point, defining the primitive constructs of the Lumi progra
     - [2.1.5 bool type](#215-bool-type)
   - [2.2 Type Casting](#22-type-casting)
     - [2.2.1 Syntax](#221-syntax)
-  - [3. Variables](#3-variables)
-    - [3.1 Definition](#31-definition)
-    - [3.2 Syntax](#32-syntax)
-      - [3.2.1 Variable Names](#321-variable-names)
-      - [3.2.2 Initialization](#322-initialization)
-      - [3.2.3 Convention](#323-convention)
+- [3. Variables](#3-variables)
+  - [3.1 Definition](#31-definition)
+  - [3.2 Syntax](#32-syntax)
+    - [3.2.1 Variable Names](#321-variable-names)
+    - [3.2.2 Initialization](#322-initialization)
+    - [3.2.3 Convention](#323-convention)
 
 ## 1. Introduction
 
