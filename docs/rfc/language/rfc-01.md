@@ -233,3 +233,59 @@ In this example, the variable `foo` is initialized with the string value of `"ba
 
 It is **_RECOMMENDED_** to add an underscore `_` to a variable name to indicate that
 that particular variable is not used in any code.
+
+## 4. General Syntax
+- Line of Code Structure (e.g., ending with ;)
+- Comments (single-line and multi-line)
+- Code Blocks (how they are defined, e.g., braces, indentation)
+- Scope rules (block scope, function scope, etc.)
+
+## 5. Control Structures
+- Conditional Statements (if, else, switch-case)
+- Loops (for, while, do-while)
+- Exception Handling (try, catch, finally)
+
+## 6. Functions and Procedures
+- Function Declaration and Definition
+- Parameters and Return Types
+- Function Overloading
+- Anonymous Functions/Lambdas
+
+## 7. Data Structures and Collections
+- Arrays and Lists
+- Maps/Dictionaries
+- Sets
+- Custom Data Structures (structs, classes, etc)
+
+## 8. Operators and Expressions
+- Arithmetic Operators
+- Logical Operators
+- Comparison Operators
+- Assignment Operators
+- Precedence and Associativity
+
+## 9. Modules and Namespaces
+- Module/Package Definition
+- Importing and Exporting Modules
+- Namespace Management
+
+## 10. Standard Library and Built-in Functions
+- Overview of Built-in Functions
+- Common Libraries (e.g., Math, String processing, I/O operations)
+
+## 11. Concurrency and Parallelism
+- Threads, Goroutines, Async/Await
+- Messaging between actors
+- Synchronization mechanisms (mutex, lock)
+
+## 12. Error Handling and Debugging
+- Error Handling Mechanisms
+- Debugging Tools and Techniques
+
+## 13. Interoperability
+- Interaction with other languages or systems
+- Foreign Function Interface (FFI)
+
+## 14. Code Examples and Best Practices
+- Sample programs
+- Coding Guidelines and Style Recommendations
