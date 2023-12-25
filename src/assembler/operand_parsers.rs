@@ -1,10 +1,10 @@
 use crate::assembler::label_parsers::parse_label_usage;
 use crate::assembler::register_parsers::parse_register;
 use crate::assembler::Token;
-use log::{debug, error};
+use log::debug;
 use nom::branch::alt;
 use nom::bytes::complete::take_until;
-use nom::character::complete::{char, digit1, multispace0};
+use nom::character::complete::{char, digit1};
 use nom::combinator::{map, not, opt, peek, recognize};
 use nom::error::{context, VerboseError};
 use nom::sequence::{preceded, terminated, tuple};

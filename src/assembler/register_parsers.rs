@@ -1,6 +1,6 @@
 use crate::assembler::Token;
 use log::debug;
-use nom::character::complete::{char, digit1, space0};
+use nom::character::complete::{char, digit1};
 use nom::combinator::{map_res, recognize};
 use nom::error::{context, VerboseError};
 use nom::sequence::preceded;

@@ -3,12 +3,12 @@ use crate::assembler::instruction_parsers::AssemblerInstruction;
 use crate::assembler::program_parsers::{parse_program, Program};
 use crate::assembler::symbols::{Symbol, SymbolTable, SymbolType};
 use crate::instruction::Opcode;
+use crate::util::header_utils::{get_lumi_header, LUMI_HEADER_LENGTH};
 use crate::util::visualize_program;
 use byteorder::{LittleEndian, WriteBytesExt};
 use colored::Colorize;
 use log::{debug, error, info};
 use nom::error::{VerboseError, VerboseErrorKind};
-use nom::Offset;
 use std::fs::File;
 use std::io;
 use std::io::{Read, Write};
@@ -25,9 +25,6 @@ pub mod program_parsers;
 mod register_parsers;
 mod separator_parsers;
 mod symbols;
-
-pub const LUMI_HEADER_PREFIX: [u8; 4] = [0x4C, 0x55, 0x4D, 0x49];
-pub const LUMI_HEADER_LENGTH: usize = 64;
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -136,7 +133,7 @@ impl Assembler {
                 }
 
                 let mut body = self.process_second_phase(&program);
-                let mut assembled_program = self.write_lumi_header();
+                let mut assembled_program = get_lumi_header(self.ro.len());
                 assembled_program.append(&mut self.ro);
                 assembled_program.append(&mut body);
 
@@ -183,25 +180,25 @@ impl Assembler {
         true
     }
 
-    fn write_lumi_header(&self) -> Vec<u8> {
-        let mut header = vec![];
-        for byte in LUMI_HEADER_PREFIX.into_iter() {
-            header.push(byte.clone());
-        }
-        while header.len() <= LUMI_HEADER_LENGTH {
-            header.push(0u8);
-        }
-
-        // calculate and write the starting offset for the VM to know where the RO section ends
-        debug!("RO Length: {}", self.ro.len());
-        let mut wtr: Vec<u8> = vec![];
-        wtr.write_u32::<LittleEndian>(self.ro.len() as u32).unwrap();
-        for byte in &wtr {
-            debug!("Written offset bytes: {:02X}", byte);
-        }
-        header.append(&mut wtr);
-        header
-    }
+    // fn write_lumi_header(&self) -> Vec<u8> {
+    //     let mut header = vec![];
+    //     for byte in LUMI_HEADER_PREFIX.into_iter() {
+    //         header.push(byte.clone());
+    //     }
+    //     while header.len() <= LUMI_HEADER_LENGTH {
+    //         header.push(0u8);
+    //     }
+    //
+    //     // calculate and write the starting offset for the VM to know where the RO section ends
+    //     debug!("RO Length: {}", self.ro.len());
+    //     let mut wtr: Vec<u8> = vec![];
+    //     wtr.write_u32::<LittleEndian>(self.ro.len() as u32).unwrap();
+    //     for byte in &wtr {
+    //         debug!("Written offset bytes: {:02X}", byte);
+    //     }
+    //     header.append(&mut wtr);
+    //     header
+    // }
 
     fn strip_extension(&self, input: &str) -> String {
         if input.ends_with(".lumi") {

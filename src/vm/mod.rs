@@ -5,14 +5,13 @@ mod logical;
 mod memory;
 mod system;
 
-use crate::assembler::{LUMI_HEADER_LENGTH, LUMI_HEADER_PREFIX};
 use crate::instruction::Opcode;
+use crate::util::header_utils::{LUMI_HEADER_LENGTH, LUMI_HEADER_PREFIX};
 use crate::util::visualize_program;
 use byteorder::{LittleEndian, ReadBytesExt};
 use chrono::{DateTime, Utc};
 use colored::Colorize;
 use log::{debug, error, info};
-use std::fmt::format;
 use std::io::Cursor;
 use uuid::Uuid;
 
@@ -156,7 +155,7 @@ impl VM {
             return Some(1);
         }
 
-        visualize_program(&self.program, Some(self.pc));
+        // visualize_program(&self.program, Some(self.pc));
         let opcode = self.decode_opcode();
         debug!("PC: {:?}", self.pc);
         debug!("Opcode: {:?}", opcode);
@@ -288,21 +287,10 @@ impl VM {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assembler::LUMI_HEADER_LENGTH;
+    use crate::util::header_utils::get_lumi_header;
 
     fn get_test_vm() -> VM {
         VM::new()
-    }
-
-    fn get_lumi_header() -> Vec<u8> {
-        let mut header = vec![];
-        for byte in LUMI_HEADER_PREFIX.into_iter() {
-            header.push(byte.clone());
-        }
-        while header.len() < LUMI_HEADER_LENGTH + 4 {
-            header.push(0u8);
-        }
-        header
     }
 
     #[test]
@@ -315,29 +303,29 @@ mod tests {
     fn test_opcode_hlt() {
         let mut test_vm = VM::new();
         let mut bytecode = vec![];
-        bytecode.append(&mut get_lumi_header());
+        bytecode.append(&mut get_lumi_header(0));
         bytecode.append(&mut vec![5, 0, 0, 0]);
         test_vm.program = bytecode;
         test_vm.run();
-        assert_eq!(test_vm.pc, 69);
+        assert_eq!(test_vm.pc, 70);
     }
 
     #[test]
     fn test_opcode_igl() {
         let mut test_vm = get_test_vm();
         let mut bytecode = vec![];
-        bytecode.append(&mut get_lumi_header());
+        bytecode.append(&mut get_lumi_header(0));
         bytecode.append(&mut vec![200, 0, 0, 0]);
         test_vm.program = bytecode;
         test_vm.run();
-        assert_eq!(test_vm.pc, 69);
+        assert_eq!(test_vm.pc, 70);
     }
 
     #[test]
     fn test_load_opcode() {
         let mut test_vm = get_test_vm();
         let mut bytecode = vec![];
-        bytecode.append(&mut get_lumi_header());
+        bytecode.append(&mut get_lumi_header(0));
         bytecode.append(&mut vec![0, 0, 244, 1]); // using little-endian -> [LOAD, register 0, 244 * 2^0, 1 * 2^8]
         test_vm.program = bytecode;
         test_vm.run();
@@ -353,7 +341,7 @@ mod tests {
         ADD $0 $1 $2 -- adds registers $0 and $1 and saves the output to $2
          */
         let mut bytecode = vec![];
-        bytecode.append(&mut get_lumi_header());
+        bytecode.append(&mut get_lumi_header(0));
         bytecode.append(&mut vec![0, 0, 244, 1, 0, 1, 25, 0, 1, 0, 1, 2, 5, 0, 0, 0]);
         test_vm.program = bytecode;
         test_vm.run();
@@ -371,7 +359,7 @@ mod tests {
         SUB $0 $1 $2 -- subtracts registers $0 and $1 and saves the output to $2
          */
         let mut bytecode = vec![];
-        bytecode.append(&mut get_lumi_header());
+        bytecode.append(&mut get_lumi_header(0));
         bytecode.append(&mut vec![0, 0, 244, 1, 0, 1, 25, 0, 2, 0, 1, 2, 5, 0, 0, 0]);
         test_vm.program = bytecode;
         test_vm.run();
@@ -389,7 +377,7 @@ mod tests {
         MUL $0 $1 $2 -- multiplies registers $0 and $1 and saves the output to $2
          */
         let mut bytecode = vec![];
-        bytecode.append(&mut get_lumi_header());
+        bytecode.append(&mut get_lumi_header(0));
         bytecode.append(&mut vec![0, 0, 2, 0, 0, 1, 10, 0, 3, 0, 1, 2, 5, 0, 0, 0]);
         test_vm.program = bytecode;
         test_vm.run();
@@ -407,7 +395,7 @@ mod tests {
         DIV $0 $1 $2 -- divides registers $0 and $1 and saves the output to $2 and remainder in remainder register
          */
         let mut bytecode = vec![];
-        bytecode.append(&mut get_lumi_header());
+        bytecode.append(&mut get_lumi_header(0));
         bytecode.append(&mut vec![0, 0, 8, 0, 0, 1, 5, 0, 4, 0, 1, 2, 5, 0, 0, 0]);
         test_vm.program = bytecode;
         test_vm.run();
@@ -576,10 +564,10 @@ mod tests {
         bytecode.append(&mut vec![16, 0, 0, 0, 16, 0, 0, 0, 17, 0, 0, 0]);
         test_vm.program = bytecode;
         test_vm.run_once();
-        assert_eq!(test_vm.pc, 4);
+        assert_eq!(test_vm.pc, 0);
         test_vm.equal_flag = false;
         test_vm.run_once();
-        assert_eq!(test_vm.pc, 9);
+        assert_eq!(test_vm.pc, 4);
     }
 
     #[test]

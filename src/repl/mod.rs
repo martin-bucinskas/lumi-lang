@@ -3,7 +3,7 @@ use crate::assembler::Assembler;
 use crate::scheduler::Scheduler;
 use crate::util::visualize_program;
 use crate::vm::{VMEvent, VM};
-use log::{debug, error, info, log};
+use log::{debug, error, info};
 use std::fs::File;
 use std::io;
 use std::io::{Read, Write};

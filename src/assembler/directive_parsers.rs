@@ -4,17 +4,11 @@ use crate::assembler::operand_parsers::parse_operand;
 use crate::assembler::separator_parsers::parse_separator;
 use crate::assembler::Token;
 use log::debug;
-use nom::branch::alt;
-use nom::character::complete::{alpha1, char, line_ending, multispace0};
+use nom::character::complete::{alpha1, char, line_ending};
 use nom::combinator::{map, opt};
 use nom::error::{context, VerboseError};
 use nom::sequence::{preceded, terminated, tuple};
 use nom::IResult;
-
-// pub fn parse_directive(input: &str) -> IResult<&str, AssemblerInstruction, VerboseError<&str>> {
-//     println!("parse_directive(\"{}\")", input);
-//     alt((parse_directive_combined,))(input)
-// }
 
 pub fn parse_directive(input: &str) -> IResult<&str, AssemblerInstruction, VerboseError<&str>> {
     debug!("parse_directive_combined(\"{}\")", input);

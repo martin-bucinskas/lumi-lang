@@ -26,7 +26,9 @@ pub fn parse_opcode(input: &str) -> IResult<&str, Token, VerboseError<&str>> {
 }
 
 mod tests {
-    use super::*;
+    use crate::assembler::opcode_parsers::parse_opcode;
+    use crate::assembler::Token;
+    use crate::instruction::Opcode;
 
     #[test]
     fn test_opcode_load() {

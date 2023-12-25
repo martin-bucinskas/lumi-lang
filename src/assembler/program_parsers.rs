@@ -3,12 +3,10 @@ use crate::assembler::instruction_parsers::{parse_instruction, AssemblerInstruct
 use crate::assembler::SymbolTable;
 use log::debug;
 use nom::branch::alt;
-use nom::character::complete::line_ending;
-use nom::character::streaming::multispace0;
 use nom::combinator::{eof, map, opt};
 use nom::error::{context, VerboseError};
-use nom::multi::{many0, many1};
-use nom::sequence::{preceded, terminated};
+use nom::multi::many0;
+use nom::sequence::terminated;
 use nom::IResult;
 
 #[derive(Debug, PartialEq)]

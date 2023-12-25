@@ -2,11 +2,11 @@ use crate::assembler::Token;
 use log::debug;
 use nom::branch::alt;
 use nom::bytes::complete::take_until;
-use nom::character::complete::{char, multispace0};
+use nom::character::complete::char;
 use nom::combinator::{map, rest};
 use nom::error::{context, VerboseError};
 use nom::sequence::preceded;
-use nom::{IResult, Parser};
+use nom::IResult;
 
 pub fn parse_comment(input: &str) -> IResult<&str, Token, VerboseError<&str>> {
     debug!("parse_comment(\"{}\")", input);

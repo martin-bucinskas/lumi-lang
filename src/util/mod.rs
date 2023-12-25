@@ -1,4 +1,6 @@
-use crate::assembler::LUMI_HEADER_LENGTH;
+pub mod header_utils;
+
+use crate::util::header_utils::LUMI_HEADER_LENGTH;
 use byteorder::{LittleEndian, ReadBytesExt};
 use colored::Colorize;
 use std::io::Cursor;
