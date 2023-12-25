@@ -35,6 +35,24 @@ This is the starting-point, defining the primitive constructs of the Lumi progra
     - [3.2.1 Variable Names](#321-variable-names)
     - [3.2.2 Initialization](#322-initialization)
     - [3.2.3 Convention](#323-convention)
+- [4. General Syntax](#4-general-syntax)
+  - [4.1 Line of Code Structure](#41-line-of-code-structure)
+  - [4.2 Comments](#42-comments)
+    - [4.2.1 Line Comment](#421-line-comment)
+    - [4.2.1 Block Comment](#422-block-comment)
+    - [4.2.1 Line Doc](#423-line-doc)
+  - [4.3 Code Blocks](#43-code-blocks)
+  - [4.4 Scope Rules](#44-scope-rules)
+- [5. Control Structures](#5-control-structures)
+- [6. Functions and Procedures](#6-functions-and-procedures)
+- [7. Data Structures and Collections](#7-data-structures-and-collections)
+- [8. Operators and Expressions](#8-operators-and-expressions)
+- [9. Modules and Namespaces](#9-modules-and-namespaces)
+- [10. Standard Library and Built-in Functions](#10-standard-library-and-built-in-functions)
+- [11. Concurrency and Parallelism](#11-concurrency-and-parallelism)
+- [12. Error Handling and Debugging](#12-error-handling-and-debugging)
+- [13. Interoperability](#13-interoperability)
+- [14. Code Examples and Best Practices](#14-code-examples-and-best-practices)
 
 ## 1. Introduction
 
@@ -235,10 +253,115 @@ It is **_RECOMMENDED_** to add an underscore `_` to a variable name to indicate 
 that particular variable is not used in any code.
 
 ## 4. General Syntax
-- Line of Code Structure (e.g., ending with ;)
-- Comments (single-line and multi-line)
-- Code Blocks (how they are defined, e.g., braces, indentation)
-- Scope rules (block scope, function scope, etc.)
+
+The general syntax of Lumi takes inspiration from a multitude of languages,
+Python, Java, Kotlin, Rust, Go, PHP, just to name a few.
+
+### 4.1 Line of Code Structure
+
+Each line of code **_MUST_** be terminated (ending) with a semicolon `;`.
+
+Example:
+```shell
+let x = 5;
+```
+
+### 4.2 Comments
+
+Every language utilises some form of comments to describe and unravel
+the spaghetti code, this language is no different.
+
+#### 4.2.1 Line Comment
+
+Line comments are comments written on a single line.<br/>
+A line comment **_MUST_** start with a `//`.
+
+**Example:**
+```shell
+// this is a line comment
+```
+
+#### 4.2.2 Block Comment
+
+A block comment **_MUST_** start with a `/*` and **_MUST_** end with a `*/`.<br />
+Block comments **_MAY_** span across multiple lines.<br />
+Everything in between of the blocks (`/*` and `*/`) will be considered
+as a comment.
+
+**Example:**
+```shell
+/* This is a block comment on a single line */
+
+/*
+This is a block comment spanning
+multiple lines
+*/
+```
+
+#### 4.2.3 Line Doc
+
+A line doc is a comment that is used as part of documentation.<br />
+A line doc **_MUST_** be declared with a `///`. Line docs **_SHOULD_** be placed before
+the line of code it is referring to.
+
+**Example:**
+```shell
+/// The value of PI.
+let pi = 3.14;
+```
+
+Multiple line docs **_MAY_** be combined to create a single doc.
+
+**Example:**
+```shell
+/// The value of PI.
+/// This value is an approximation.
+let pi = 3.14;
+```
+
+### 4.3 Code Blocks
+
+Code blocks are used for control logic, function definitions, etc.
+
+Code blocks are defined using parentheses `{}`.<br />
+A code block **_MUST_** start with a `{` and **_MUST_** end with a matching `}`.
+
+A code block **_MAY_** span across multiple lines, or it **_MAY_** span across
+the same line as the opening brace.
+
+**Example:**
+```shell
+if x > 5 {
+  // do something
+};
+
+if x > 5 { /* do something */ };
+```
+
+### 4.4 Scope Rules
+
+Variables and functions declared throughout the code are scoped.
+In computer programming, the scope of a name binding is the part of
+a program where the name binding is valid; that is, where the name
+can be used to refer to the entity. In other parts of the program,
+the name may refer to a different entity, or to nothing at all.
+
+A variable or a function, or any other scoped construct **_MAY_** be referred
+to in the current, or any subsequent block of code.
+
+A variable or a function **_SHALL NOT_** be redeclared in the current
+block level or any subsequent block levels if it is already
+declared in the current scope.
+
+**Example:**
+```shell
+let x = 5;
+
+if x >= 5 {
+  x = 2; // x is already declared one block level above, so this works
+  let x = 2; // x is already declared, so this fails to be redeclared
+};
+```
 
 ## 5. Control Structures
 - Conditional Statements (if, else, switch-case)
