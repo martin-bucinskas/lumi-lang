@@ -1,4 +1,5 @@
 mod arithmetic;
+mod bitwise;
 mod comparison;
 mod control;
 mod logical;
@@ -7,10 +8,8 @@ mod system;
 
 use crate::instruction::Opcode;
 use crate::util::header_utils::{LUMI_HEADER_LENGTH, LUMI_HEADER_PREFIX};
-use crate::util::visualize_program;
 use byteorder::{LittleEndian, ReadBytesExt};
 use chrono::{DateTime, Utc};
-use colored::Colorize;
 use log::{debug, error, info};
 use std::io::Cursor;
 use uuid::Uuid;
@@ -39,16 +38,20 @@ pub struct VMEvent {
     application_id: Uuid,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VM {
     /// Array simulating hardware registers
     pub(crate) registers: [i32; 32],
+    /// Array simulating floating point hardware registers
+    pub(crate) float_registers: [f64; 32],
     /// Program counter tracking byte execution
     pub(crate) pc: usize,
     /// Bytecode of the program being run
     pub(crate) program: Vec<u8>,
-    /// The VMs heap
+    /// The VMs heap memory
     pub(crate) heap: Vec<u8>,
+    /// The VMs stack memory
+    pub(crate) stack: Vec<i32>,
     /// Remainder of modulo division operations
     pub(crate) remainder: u32,
     /// Result of last comparison operation
@@ -57,6 +60,12 @@ pub struct VM {
     pub(crate) events: Vec<VMEvent>,
     /// Contains read-only section data
     pub(crate) ro_data: Vec<u8>,
+    /// Loop counter
+    pub(crate) loop_counter: usize,
+    /// Stack pointer, keeps track of where currently in the stack we are
+    pub(crate) sp: usize,
+    /// Frame pointer, keeps track of current frame pointer
+    pub(crate) bp: usize,
     /// Unique randomly generated UUID for identifying this VM
     pub id: Uuid,
 }
@@ -83,13 +92,18 @@ impl VM {
     pub fn new() -> Self {
         VM {
             registers: [0; 32],
+            float_registers: [0.0; 32],
             pc: 0,
             program: vec![],
             heap: vec![],
+            stack: vec![],
             remainder: 0,
             equal_flag: false,
             events: vec![],
             ro_data: vec![],
+            loop_counter: 0,
+            sp: 0,
+            bp: 0,
             id: Uuid::new_v4(),
         }
     }
@@ -227,6 +241,89 @@ impl VM {
             }
             Opcode::PRTS => {
                 self.system_execute_print_string();
+            }
+            Opcode::AND => {
+                self.logical_execute_and();
+            }
+            Opcode::OR => {
+                self.logical_execute_or();
+            }
+            Opcode::XOR => {
+                self.logical_execute_xor();
+            }
+            Opcode::NOT => {
+                self.logical_execute_not();
+            }
+            Opcode::LUI => {
+                self.memory_execute_load_upper_immediate();
+            }
+            Opcode::SHL => {
+                self.bitwise_execute_shift_left();
+            }
+            Opcode::SHR => {
+                self.bitwise_execute_shift_right();
+            }
+            Opcode::LOADM => {
+                self.memory_execute_load_memory();
+            }
+            Opcode::SETM => {
+                self.memory_execute_set_memory();
+            }
+            Opcode::PUSH => {
+                self.memory_execute_push_to_stack();
+            }
+            Opcode::POP => {
+                self.memory_execute_pop_from_stack();
+            }
+            Opcode::LOOP => {
+                self.control_execute_loop();
+            }
+            Opcode::CLOOP => {
+                self.control_execute_create_loop();
+            }
+            Opcode::CALL => {
+                self.system_execute_call();
+            }
+            Opcode::RET => {
+                self.system_execute_return();
+            }
+            Opcode::LOADF64 => {
+                self.memory_execute_load_f64();
+            }
+            Opcode::ADDF64 => {
+                self.arithmetic_execute_add_f64();
+            }
+            Opcode::SUBF64 => {
+                self.arithmetic_execute_sub_f64();
+            }
+            Opcode::MULF64 => {
+                self.arithmetic_execute_mul_f64();
+            }
+            Opcode::DIVF64 => {
+                self.arithmetic_execute_div_f64();
+            }
+            Opcode::EQF64 => {
+                self.comparison_execute_equal_f64();
+            }
+            Opcode::NEQF64 => {
+                self.comparison_execute_not_equal_f64();
+            }
+            Opcode::GTF64 => {
+                self.comparison_execute_greater_than_f64();
+            }
+            Opcode::GTEF64 => {
+                self.comparison_execute_greater_than_or_equal_f64();
+            }
+            Opcode::LTF64 => {
+                self.comparison_execute_less_than_f64();
+            }
+            Opcode::LTEF64 => {
+                self.comparison_execute_less_than_or_equal_f64();
+            }
+            Opcode::NOP => {
+                self.next_8_bits();
+                self.next_8_bits();
+                self.next_8_bits();
             }
             Opcode::IGL => {
                 error!("Illegal instruction encountered");

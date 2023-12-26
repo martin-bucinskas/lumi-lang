@@ -25,4 +25,23 @@ impl VM {
             }
         }
     }
+
+    /// Calls a subroutine.
+    /// Creates a return destination.
+    /// Gets the address destination to jump to.
+    /// Pushes the return address to stack.
+    pub(crate) fn system_execute_call(&mut self) {
+        let return_destination = self.pc + 3;
+        let destination = self.next_16_bits();
+        self.stack.push(return_destination as i32);
+        self.stack.push(self.bp as i32);
+        self.bp = self.sp;
+        self.pc = destination as usize;
+    }
+
+    pub(crate) fn system_execute_return(&mut self) {
+        self.sp = self.bp;
+        self.bp = self.stack.pop().unwrap() as usize;
+        self.pc = self.stack.pop().unwrap() as usize;
+    }
 }

@@ -38,4 +38,20 @@ impl VM {
             self.next_8_bits();
         }
     }
+
+    pub(crate) fn control_execute_loop(&mut self) {
+        if self.loop_counter != 0 {
+            self.loop_counter -= 1;
+            let target = self.next_16_bits();
+            self.pc = target as usize;
+        } else {
+            self.pc += 3;
+        }
+    }
+
+    pub(crate) fn control_execute_create_loop(&mut self) {
+        let loop_count = self.next_16_bits();
+        self.loop_counter = loop_count as usize;
+        self.next_8_bits();
+    }
 }
