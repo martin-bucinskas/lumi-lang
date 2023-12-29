@@ -8,9 +8,11 @@ mod system;
 
 use crate::instruction::Opcode;
 use crate::util::header_utils::{LUMI_HEADER_LENGTH, LUMI_HEADER_PREFIX};
+use crate::vm::system::{WatchType, WatchVariable};
 use byteorder::{LittleEndian, ReadBytesExt};
 use chrono::{DateTime, Utc};
 use log::{debug, error, info};
+use std::collections::HashMap;
 use std::io::Cursor;
 use uuid::Uuid;
 
@@ -19,6 +21,12 @@ pub enum VMEventType {
     Start,
     GracefulStop { code: u32 },
     Crash { code: u32 },
+}
+
+pub enum ExecutionStatus {
+    Continue,
+    BreakpointHit,
+    Done(u32),
 }
 
 impl VMEventType {
@@ -66,6 +74,8 @@ pub struct VM {
     pub(crate) sp: usize,
     /// Frame pointer, keeps track of current frame pointer
     pub(crate) bp: usize,
+    /// Debugger watched variables
+    pub(crate) watch_variables: HashMap<WatchType, WatchVariable>,
     /// Unique randomly generated UUID for identifying this VM
     pub id: Uuid,
 }
@@ -104,6 +114,7 @@ impl VM {
             loop_counter: 0,
             sp: 0,
             bp: 0,
+            watch_variables: HashMap::new(),
             id: Uuid::new_v4(),
         }
     }
@@ -145,8 +156,21 @@ impl VM {
         self.read_ro_data();
 
         let mut is_done = None;
+        let mut in_step_mode = false;
         while is_done.is_none() {
-            is_done = self.execute_instruction();
+            match self.execute_instruction() {
+                ExecutionStatus::Continue => {
+                    if in_step_mode {
+                        in_step_mode = self.system_execute_breakpoint();
+                    }
+                }
+                ExecutionStatus::BreakpointHit => {
+                    in_step_mode = self.system_execute_breakpoint();
+                }
+                ExecutionStatus::Done(code) => {
+                    is_done = Some(code);
+                }
+            }
         }
         self.events.push(VMEvent {
             event: VMEventType::GracefulStop {
@@ -164,9 +188,22 @@ impl VM {
     }
 
     /// Executes a single instruction based on PC
-    fn execute_instruction(&mut self) -> Option<u32> {
+    fn execute_instruction(&mut self) -> ExecutionStatus {
         if self.pc >= self.program.len() {
-            return Some(1);
+            return ExecutionStatus::Done(1);
+        }
+
+        // check for watch variable changes
+        for watch_var in self.watch_variables.values_mut() {
+            let current_value = match watch_var.watch_type {
+                WatchType::Memory(addr) => self.heap[addr] as i32,
+                WatchType::Register(index) => self.registers[index],
+            };
+
+            if current_value != watch_var.last_value {
+                info!("Watch variable changed: {:?}", watch_var);
+                watch_var.last_value = current_value;
+            }
         }
 
         // visualize_program(&self.program, Some(self.pc));
@@ -177,7 +214,13 @@ impl VM {
         match opcode {
             Opcode::HLT => {
                 info!("HLT encountered, stopping execution...");
-                return Some(0);
+                return ExecutionStatus::Done(0);
+            }
+            Opcode::BKPT => {
+                self.next_8_bits();
+                self.next_8_bits();
+                self.next_8_bits();
+                return ExecutionStatus::BreakpointHit;
             }
             Opcode::LOAD => {
                 self.memory_execute_load();
@@ -327,14 +370,14 @@ impl VM {
             }
             Opcode::IGL => {
                 error!("Illegal instruction encountered");
-                return Some(1);
+                return ExecutionStatus::Done(1);
             }
             _ => {
                 error!("Unrecognized opcode found");
-                return Some(1);
+                return ExecutionStatus::Done(1);
             }
         };
-        None
+        ExecutionStatus::Continue
     }
 
     pub(crate) fn decode_opcode(&mut self) -> Opcode {

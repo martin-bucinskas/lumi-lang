@@ -8,6 +8,7 @@ load $2 #0
 prts @test1
 prts @test2
 start: inc $2
+bkpt
 eq $0 $2
 djmpe @end
 djmp @start

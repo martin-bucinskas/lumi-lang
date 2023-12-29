@@ -5,8 +5,8 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use colored::Colorize;
 use std::io::Cursor;
 
-pub fn to_hex(value: u8) -> String {
-    format!("{:02x}", value)
+pub fn to_hex(value: usize) -> String {
+    format!("{:08x}", value)
 }
 
 fn get_byte_color(

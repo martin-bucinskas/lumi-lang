@@ -52,6 +52,7 @@ pub enum Opcode {
     CALL,
     RET,
     DJMP,
+    BKPT,
 }
 
 pub trait OpcodeExecutor {
@@ -111,6 +112,7 @@ impl From<&str> for Opcode {
             "CALL" => Opcode::CALL,
             "RET" => Opcode::RET,
             "DJMP" => Opcode::DJMP,
+            "BKPT" => Opcode::BKPT,
             _ => Opcode::IGL,
         };
     }
@@ -168,6 +170,7 @@ impl From<u8> for Opcode {
             46 => Opcode::CALL,
             47 => Opcode::RET,
             48 => Opcode::DJMP,
+            49 => Opcode::BKPT,
             _ => Opcode::IGL,
         };
     }
@@ -225,6 +228,7 @@ impl From<Opcode> for u8 {
             Opcode::CALL => 46,
             Opcode::RET => 47,
             Opcode::DJMP => 48,
+            Opcode::BKPT => 49,
             Opcode::IGL => 100,
         }
     }

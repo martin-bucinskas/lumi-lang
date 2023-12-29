@@ -3,6 +3,7 @@
 A general programming language running in its own VM.
 
 ## TODO:
+Compiler - https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html
 FFI - https://doc.rust-lang.org/nomicon/ffi.html#creating-a-safe-interface
 
 ## Inspiration

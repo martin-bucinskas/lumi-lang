@@ -1,7 +1,8 @@
+mod repl_commands;
+
 use crate::assembler::program_parsers::parse_program;
 use crate::assembler::Assembler;
 use crate::scheduler::Scheduler;
-use crate::util::visualize_program;
 use crate::vm::{VMEvent, VM};
 use log::{debug, error, info};
 use std::fs::File;
@@ -15,6 +16,7 @@ pub struct REPL {
     vm: VM,
     asm: Assembler,
     scheduler: Scheduler,
+    history: Vec<String>,
 }
 
 impl REPL {
@@ -24,6 +26,7 @@ impl REPL {
             command_buffer: vec![],
             asm: Assembler::new(),
             scheduler: Scheduler::new(),
+            history: vec![],
         }
     }
 
@@ -33,6 +36,54 @@ impl REPL {
 
     pub fn execute(&mut self) -> Vec<VMEvent> {
         self.vm.run()
+    }
+
+    pub fn execute_command(&mut self, buffer: &str) {
+        let string_buffer = buffer.to_string();
+        let split = string_buffer.split_whitespace();
+        let tokens: Vec<String> = split.map(|s| s.to_string()).collect();
+
+        if let Some(command) = tokens.get(0) {
+            let args = tokens[1..].to_vec();
+            match command.as_str() {
+                "!quit" => {
+                    self.command_quit(args);
+                }
+                "!history" => {
+                    self.command_history(args);
+                }
+                "!clear_program" => {
+                    self.command_clear_program(args);
+                }
+                "!clear_registers" => {
+                    self.command_clear_registers(args);
+                }
+                "!registers" => {
+                    self.command_registers(args);
+                }
+                "!assemble" => {
+                    self.command_assemble(args);
+                }
+                "!symbols" => {
+                    self.command_symbols(args);
+                }
+                "!load" => {
+                    self.command_load_program(args);
+                }
+                "!hex_dump" => {
+                    self.command_hex_dump(args);
+                }
+                "!spawn" => {
+                    self.command_spawn(args);
+                }
+                "!run" => {
+                    self.command_run(args);
+                }
+                _ => {
+                    error!("Unrecognized command");
+                }
+            }
+        }
     }
 
     pub fn run(&mut self) {
@@ -45,98 +96,24 @@ impl REPL {
             stdin.read_line(&mut buffer).expect("Unable to read line");
             let buffer = buffer.trim();
             self.command_buffer.push(buffer.to_string());
+            self.history.push(buffer.to_string());
 
-            match buffer {
-                ".program" => {
-                    info!("Currently loaded program:");
-                    visualize_program(self.vm.get_program(), None);
+            if (buffer.starts_with("!")) {
+                self.execute_command(&buffer);
+            } else {
+                let parsed_program = parse_program(buffer);
+                if parsed_program.is_err() {
+                    error!("Unable to parse input: {:?}", parsed_program.unwrap_err());
                     continue;
                 }
-                ".clear_program" => {
-                    info!("Clearing the program vector...");
-                    self.vm.get_program().clear();
-                    continue;
-                }
-                ".registers" => {
-                    info!("Listing registers and their contents:");
-                    info!("{:#?}", self.vm.get_registers());
-                    continue;
-                }
-                ".history" => {
-                    for command in &self.command_buffer {
-                        info!("{}", command);
-                    }
-                    continue;
-                }
-                ".quit" => {
-                    info!("Exiting...");
-                    std::process::exit(0);
-                }
-                ".assemble" => {
-                    let file_to_assemble =
-                        self.get_user_input(Some("File to assemble: ".to_string()));
-                    if file_to_assemble.is_none() {
-                        error!("Received no input");
-                        continue;
-                    }
 
-                    match self.asm.assemble_file(&file_to_assemble.unwrap()) {
-                        true => info!("File successfully assembled"),
-                        false => error!("Failed to assemble file"),
-                    };
+                let (_, result) = parsed_program.unwrap();
+                let bytecode = result.to_bytes(&self.asm.symbols);
+
+                for byte in bytecode {
+                    self.vm.add_byte(byte);
                 }
-                ".run" => {
-                    let file_to_run = self.get_user_input(Some("File to run: ".to_string()));
-                    if file_to_run.is_none() {
-                        error!("Received no input");
-                        continue;
-                    }
-
-                    let binary = self.get_binary_data_from_file(file_to_run.unwrap());
-                    if binary.is_none() {
-                        error!("Failed to read file");
-                        continue;
-                    }
-
-                    self.vm.get_program().append(&mut binary.unwrap());
-                    let events = self.vm.run();
-                    for event in &events {
-                        info!("{:#?}", event);
-                        // println!("{:#?}", event);
-                    }
-                }
-                ".spawn" => {
-                    let file_to_run = self.get_user_input(Some("File to run: ".to_string()));
-                    if file_to_run.is_none() {
-                        error!("Received no input");
-                        continue;
-                    }
-
-                    let binary = self.get_binary_data_from_file(file_to_run.unwrap());
-                    if binary.is_none() {
-                        error!("Failed to read file");
-                        continue;
-                    }
-
-                    self.vm.get_program().append(&mut binary.unwrap());
-                    let _events = self.scheduler.get_thread(self.vm.clone());
-                    continue;
-                }
-                _ => {
-                    let parsed_program = parse_program(buffer);
-                    if parsed_program.is_err() {
-                        error!("Unable to parse input: {:?}", parsed_program.unwrap_err());
-                        continue;
-                    }
-
-                    let (_, result) = parsed_program.unwrap();
-                    let bytecode = result.to_bytes(&self.asm.symbols);
-
-                    for byte in bytecode {
-                        self.vm.add_byte(byte);
-                    }
-                    self.vm.run_once();
-                }
+                self.vm.run_once();
             }
         }
     }
@@ -180,7 +157,7 @@ impl REPL {
         let mut contents: Vec<u8> = vec![];
         match file.read_to_end(&mut contents) {
             Ok(length) => {
-                debug!("Read in total of {} bytes", length);
+                info!("Read in total of {} bytes", length);
                 Some(contents)
             }
             Err(err) => {
@@ -211,7 +188,7 @@ impl REPL {
         let mut contents = String::new();
         match file.read_to_string(&mut contents) {
             Ok(length) => {
-                debug!("Read in total of {} bytes", length);
+                info!("Read in total of {} bytes", length);
                 Some(contents)
             }
             Err(err) => {
