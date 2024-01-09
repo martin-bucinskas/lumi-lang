@@ -1,14 +1,12 @@
 use crate::vm::VM;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use log::debug;
-use nom::character::complete::i32;
-use std::io::Write;
 
 impl VM {
     pub(crate) fn memory_execute_load(&mut self) {
         let register = self.next_8_bits() as usize;
-        let number = self.next_16_bits() as u16;
-        debug!("LOAD ${} #{}", register, number);
+        let number = self.next_16_bits();
+        debug!("[LOAD ${} #{}]", register, number);
         self.registers[register] = number as i32;
     }
 
@@ -21,8 +19,11 @@ impl VM {
     pub(crate) fn memory_execute_allocate(&mut self) {
         let register = self.next_8_bits() as usize;
         let bytes = self.registers[register];
+        debug!("[ALOC ${}]", register);
         let new_end = self.heap.len() as i32 + bytes;
         self.heap.resize(new_end as usize, 0);
+        self.next_8_bits();
+        self.next_8_bits();
     }
 
     pub(crate) fn memory_execute_load_upper_immediate(&mut self) {
@@ -47,8 +48,11 @@ impl VM {
     }
 
     pub(crate) fn memory_execute_set_memory(&mut self) {
-        let _offset = self.registers[self.next_8_bits() as usize] as usize;
-        let data = self.registers[self.next_8_bits() as usize];
+        let offset_register = self.next_8_bits();
+        let data_register = self.next_8_bits();
+        let _offset = self.registers[offset_register as usize] as usize;
+        let data = self.registers[data_register as usize];
+        debug!("[SETM ${} ${}]", offset_register, data_register);
         let mut buf: [u8; 4] = [0, 0, 0, 0];
         buf.as_mut()
             .write_i32::<LittleEndian>(data)
@@ -58,6 +62,7 @@ impl VM {
             self.heap.push(byte);
             // self.heap.push_within_capacity(byte); // safer?
         }
+        self.next_8_bits();
     }
 
     pub(crate) fn memory_execute_push_to_stack(&mut self) {

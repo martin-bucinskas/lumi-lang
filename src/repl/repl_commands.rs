@@ -3,39 +3,39 @@ use crate::util::visualize_program;
 use log::{error, info};
 
 impl REPL {
-    pub(crate) fn command_quit(&self, args: Vec<String>) {
+    pub(crate) fn command_quit(&self, _args: Vec<String>) {
         info!("Exiting...");
         std::process::exit(0);
     }
 
-    pub(crate) fn command_history(&self, args: Vec<String>) {
+    pub(crate) fn command_history(&self, _args: Vec<String>) {
         for command in &self.command_buffer {
             info!("{}", command);
         }
     }
 
-    pub(crate) fn command_clear_program(&mut self, args: Vec<String>) {
+    pub(crate) fn command_clear_program(&mut self, _args: Vec<String>) {
         info!("Clearing the program vector...");
         self.vm.program.clear();
     }
 
-    pub(crate) fn command_clear_registers(&mut self, args: Vec<String>) {
+    pub(crate) fn command_clear_registers(&mut self, _args: Vec<String>) {
         info!("Clearing the VMs registers...");
         self.vm.registers = [0; 32];
         self.vm.float_registers = [0.0; 32];
     }
 
-    pub(crate) fn command_registers(&self, args: Vec<String>) {
+    pub(crate) fn command_registers(&self, _args: Vec<String>) {
         info!("Listing registers and their contents: ");
         info!("{:#?}", self.vm.registers);
     }
 
-    pub(crate) fn command_symbols(&mut self, args: Vec<String>) {
+    pub(crate) fn command_symbols(&mut self, _args: Vec<String>) {
         info!("Listing symbols: ");
         info!("{:#?}", self.asm.symbols);
     }
 
-    pub(crate) fn command_hex_dump(&mut self, args: Vec<String>) {
+    pub(crate) fn command_hex_dump(&mut self, _args: Vec<String>) {
         info!("Currently loaded program: ");
         visualize_program(self.vm.get_program(), None);
     }

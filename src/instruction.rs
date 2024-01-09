@@ -1,4 +1,24 @@
 use crate::vm::VM;
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum OperandType {
+    Register,
+    FloatRegister,
+    Integer,
+    Float,
+    Address,
+    Empty,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct OpcodeMetadata {
+    pub operand_types: [OperandType; 3],
+    pub description: &'static str,
+    pub str_symbol: &'static str,
+    pub bytecode: u8,
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Opcode {
@@ -59,178 +79,536 @@ pub trait OpcodeExecutor {
     fn execute(&mut self, vm: &mut VM);
 }
 
+lazy_static! {
+    static ref OPCODE_METADATA: &'static [(Opcode, OpcodeMetadata)] = &[
+        (Opcode::LOAD, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Integer,
+                    OperandType::Empty,
+                ],
+                description: "Loads an integer into a register, use: LOAD $<register> #<value>",
+                str_symbol: "LOAD",
+                bytecode: 0,
+            }),
+            (Opcode::ADD, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Register,
+                ],
+                description: "Adds 2 registers together and saves in another register, use: ADD $<register> $<register> $<register>",
+                str_symbol: "ADD",
+                bytecode: 1,
+            }),
+            (Opcode::SUB, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Register,
+                ],
+                description: "Subtracts 2 registers together and saves in another register, use: SUB $<register> $<register> $<register>",
+                str_symbol: "SUB",
+                bytecode: 2,
+            }),
+            (Opcode::MUL, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Register,
+                ],
+                description: "Multiplies 2 registers together and saves in another register, use: MUL $<register> $<register> $<register>",
+                str_symbol: "MUL",
+                bytecode: 3,
+            }),
+            (Opcode::DIV, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Register,
+                ],
+                description: "Divides 2 registers together and saves in another register, use: DIV $<register> $<register> $<register>",
+                str_symbol: "DIV",
+                bytecode: 4,
+            }),
+            (Opcode::HLT, OpcodeMetadata {
+                operand_types: [OperandType::Empty, OperandType::Empty, OperandType::Empty],
+                description: "Halts the execution, use: HLT",
+                str_symbol: "HLT",
+                bytecode: 5,
+            }),
+            (Opcode::JMP, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Jump to a memory address stored in a register, use: JMP $<register>",
+                str_symbol: "JMP",
+                bytecode: 6,
+            }),
+            (Opcode::JMPF, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Jump forward by offset stored in a register, use: JMPF $<register>",
+                str_symbol: "JMPF",
+                bytecode: 7,
+            }),
+            (Opcode::JMPB, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Jump backward by offset stored in a register, use: JMPB $<register>",
+                str_symbol: "JMPB",
+                bytecode: 8,
+            }),
+            (Opcode::EQ, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 registers if they're equal, sets the equal_flag to true if they are, use: EQ $<register> $<register>",
+                str_symbol: "EQ",
+                bytecode: 9,
+            }),
+            (Opcode::NEQ, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 registers if they're not equal, sets the equal_flag to true if the registers are not equal, use: NEQ $<register> $<register>",
+                str_symbol: "NEQ",
+                bytecode: 10,
+            }),
+            (Opcode::GT, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 registers if register_1 is greater than register_2, sets the equal_flag to true if the registers are not equal, use: GT $<register> $<register>",
+                str_symbol: "GT",
+                bytecode: 11,
+            }),
+            (Opcode::LT, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 registers if register_1 is less than register_2, sets the equal_flag to true if the registers are not equal, use: LT $<register> $<register>",
+                str_symbol: "LT",
+                bytecode: 12,
+            }),
+            (Opcode::GTE, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 registers if register_1 is greater than or equal to register_2, sets the equal_flag to true if the registers are not equal, use: GTE $<register> $<register>",
+                str_symbol: "GTE",
+                bytecode: 13,
+            }),
+            (Opcode::LTE, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 registers if register_1 is less than or equal to register_2, sets the equal_flag to true if the registers are not equal, use: LTE $<register> $<register>",
+                str_symbol: "LTE",
+                bytecode: 14,
+            }),
+            (Opcode::JMPE, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Conditional jump if equal_flag is true to a memory address defined in register, use: JMPE $<register>",
+                str_symbol: "JMPE",
+                bytecode: 15,
+            }),
+            (Opcode::DJMPE, OpcodeMetadata {
+                operand_types: [OperandType::Address, OperandType::Empty, OperandType::Empty],
+                description: "Conditional direct jump if equal_flag is true to a memory address, use: JMPE #<integer>",
+                str_symbol: "DJMPE",
+                bytecode: 16,
+            }),
+            (Opcode::ALOC, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Allocate memory to the heap with size defined in register, use: ALOC $<register>",
+                str_symbol: "ALOC",
+                bytecode: 17,
+            }),
+            (Opcode::INC, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Increments a register by 1, use: INC $<register>",
+                str_symbol: "INC",
+                bytecode: 18,
+            }),
+            (Opcode::DEC, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Decrements a register by 1, use: DEC $<register>",
+                str_symbol: "DEC",
+                bytecode: 19,
+            }),
+            (Opcode::NOP, OpcodeMetadata {
+                operand_types: [OperandType::Empty, OperandType::Empty, OperandType::Empty],
+                description: "Performs no operation, use: NOP",
+                str_symbol: "NOP",
+                bytecode: 20,
+            }),
+            (Opcode::PRTS, OpcodeMetadata {
+                operand_types: [OperandType::Address, OperandType::Empty, OperandType::Empty],
+                description: "Print string from heap until a null terminator is reached, heap offset address provided as operand, use: PRTS @label",
+                str_symbol: "PRTS",
+                bytecode: 21,
+            }),
+            (Opcode::LOADF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::Float,
+                    OperandType::Empty,
+                ],
+                description: "Loads a float value to a float register, use: LOADF64 $<float_register> #1.2345",
+                str_symbol: "LOADF64",
+                bytecode: 22,
+            }),
+            (Opcode::ADDF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                ],
+                description: "Adds 2 float registers together and saves in another float register, use: ADDF64 $<register> $<register> $<register>",
+                str_symbol: "ADDF64",
+                bytecode: 23,
+            }),
+            (Opcode::SUBF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                ],
+                description: "Subtracts 2 float registers together and saves in another float register, use: SUBF64 $<register> $<register> $<register>",
+                str_symbol: "SUBF64",
+                bytecode: 24,
+            }),
+            (Opcode::MULF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                ],
+                description: "Multiplies 2 float registers together and saves in another float register, use: MULF64 $<register> $<register> $<register>",
+                str_symbol: "MULF64",
+                bytecode: 25,
+            }),
+            (Opcode::DIVF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                ],
+                description: "Divides 2 float registers together and saves in another float register, use: DIVF64 $<register> $<register> $<register>",
+                str_symbol: "DIVF64",
+                bytecode: 26,
+            }),
+            (Opcode::EQF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 float registers if they're equal, sets the equal_flag to true if they are, use: EQF64 $<register> $<register>",
+                str_symbol: "EQF64",
+                bytecode: 27,
+            }),
+            (Opcode::NEQF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 float registers if they're not equal, sets the equal_flag to true if they are, use: NEQF64 $<register> $<register>",
+                str_symbol: "NEQF64",
+                bytecode: 28,
+            }),
+            (Opcode::GTF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 float registers if register_1 is greater than register_2, sets the equal_flag to true if they are, use: GTF64 $<register> $<register>",
+                str_symbol: "GTF64",
+                bytecode: 29,
+            }),
+            (Opcode::GTEF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 float registers if register_1 is greater than or equal to register_2, sets the equal_flag to true if they are, use: GTEF64 $<register> $<register>",
+                str_symbol: "GTEF64",
+                bytecode: 30,
+            }),
+            (Opcode::LTF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 float registers if register_1 is less than register_2, sets the equal_flag to true if they are, use: LTF64 $<register> $<register>",
+                str_symbol: "LTF64",
+                bytecode: 31,
+            }),
+            (Opcode::LTEF64, OpcodeMetadata {
+                operand_types: [
+                    OperandType::FloatRegister,
+                    OperandType::FloatRegister,
+                    OperandType::Empty,
+                ],
+                description: "Compare 2 float registers if register_1 is less than or equal to register_2, sets the equal_flag to true if they are, use: LTEF64 $<register> $<register>",
+                str_symbol: "LTEF64",
+                bytecode: 32,
+            }),
+            (Opcode::SHL, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Integer,
+                    OperandType::Empty,
+                ],
+                description: "Shift register value left by integer value, use: SHL $<register> #<integer>",
+                str_symbol: "SHL",
+                bytecode: 33,
+            }),
+            (Opcode::SHR, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Integer,
+                    OperandType::Empty,
+                ],
+                description: "Shift register value right by integer value, use: SHR $<register> #<integer>",
+                str_symbol: "SHR",
+                bytecode: 34,
+            }),
+            (Opcode::AND, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Register,
+                ],
+                description: "Perform logical AND operation between register_1 and register_2, store output to register_3, use: AND $<register> $<register> $<register>",
+                str_symbol: "AND",
+                bytecode: 35,
+            }),
+            (Opcode::OR, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Register,
+                ],
+                description: "Perform logical OR operation between register_1 and register_2, store output to register_3, use: OR $<register> $<register> $<register>",
+                str_symbol: "OR",
+                bytecode: 36,
+            }),
+            (Opcode::XOR, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Register,
+                ],
+                description: "Perform logical EXCLUSIVE OR operation between register_1 and register_2, store output to register_3, use: XOR $<register> $<register> $<register>",
+                str_symbol: "XOR",
+                bytecode: 37,
+            }),
+            (Opcode::NOT, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Perform logical NOT operation on register_1 and store the output to register_2, use: NOT $<register> $<register>",
+                str_symbol: "NOT",
+                bytecode: 38,
+            }),
+            (Opcode::LUI, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Integer,
+                    OperandType::Integer,
+                ],
+                description: "Load upper immediate value to register, use: LUI $<register> #<integer> #<integer>",
+                str_symbol: "LUI",
+                bytecode: 39,
+            }),
+            (Opcode::CLOOP, OpcodeMetadata {
+                operand_types: [OperandType::Integer, OperandType::Empty, OperandType::Empty],
+                description: "Create loop setting the loop_count to the value provided, use: CLOOP #<integer>",
+                str_symbol: "CLOOP",
+                bytecode: 40,
+            }),
+            (Opcode::LOOP, OpcodeMetadata {
+                operand_types: [OperandType::Address, OperandType::Empty, OperandType::Empty],
+                description: "Loop to provided address until loop_counter reaches 0, use: LOOP @<address>",
+                str_symbol: "LOOP",
+                bytecode: 41,
+            }),
+            (Opcode::LOADM, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Loads heap memory at offset defined in register_1 and stores it to register_2, use: LOADM $<register> $<register>",
+                str_symbol: "LOADM",
+                bytecode: 42,
+            }),
+            (Opcode::SETM, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Register,
+                    OperandType::Empty,
+                ],
+                description: "Sets heap memory value at offset defined with register_1 with the value of register_2, use: SETM $<register> $<register>",
+                str_symbol: "SETM",
+                bytecode: 43,
+            }),
+            (Opcode::PUSH, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Pushes registers value to stack memory, use: PUSH $<register>",
+                str_symbol: "PUSH",
+                bytecode: 44,
+            }),
+            (Opcode::POP, OpcodeMetadata {
+                operand_types: [
+                    OperandType::Register,
+                    OperandType::Empty,
+                    OperandType::Empty,
+                ],
+                description: "Pops registers value to stack memory, use: POP $<register>",
+                str_symbol: "POP",
+                bytecode: 45,
+            }),
+            (Opcode::CALL, OpcodeMetadata {
+                operand_types: [OperandType::Address, OperandType::Empty, OperandType::Empty],
+                description: "Calls a subroutine and creates a return destination, gets the address destination to jump to, pushes the return address to stack, use: CALL @<address>",
+                str_symbol: "CALL",
+                bytecode: 46,
+            }),
+            (Opcode::RET, OpcodeMetadata {
+                operand_types: [OperandType::Empty, OperandType::Empty, OperandType::Empty],
+                description: "Returns from a subroutine, pops the return address, use: RET",
+                str_symbol: "RET",
+                bytecode: 47,
+            }),
+            (Opcode::DJMP, OpcodeMetadata {
+                operand_types: [OperandType::Address, OperandType::Empty, OperandType::Empty],
+                description: "Direct jump to a memory address, use DJMP @<address>",
+                str_symbol: "DJMP",
+                bytecode: 48,
+            }),
+            (Opcode::BKPT, OpcodeMetadata {
+                operand_types: [OperandType::Empty, OperandType::Empty, OperandType::Empty],
+                description: "Creates a breakpoint in the program for debugging, use: BKPT",
+                str_symbol: "BKPT",
+                bytecode: 49,
+            }),
+            (Opcode::IGL, OpcodeMetadata {
+                operand_types: [OperandType::Empty, OperandType::Empty, OperandType::Empty],
+                description: "Invalid opcode, should never be used directly, use: IGL",
+                str_symbol: "IGL",
+                bytecode: 100,
+            })
+    ];
+}
+
+lazy_static! {
+    static ref BYTE_TO_OPCODE_MAP: HashMap<u8, Opcode> = {
+        let mut map = HashMap::new();
+        for &(opcode, ref metadata) in OPCODE_METADATA.iter() {
+            map.insert(metadata.bytecode, opcode);
+        }
+        map
+    };
+    static ref STR_TO_OPCODE_MAP: HashMap<&'static str, Opcode> = {
+        let mut map = HashMap::new();
+        for &(opcode, ref metadata) in OPCODE_METADATA.iter() {
+            map.insert(metadata.str_symbol, opcode);
+        }
+        map
+    };
+}
+
+impl Opcode {
+    pub fn from_byte(byte: u8) -> Option<Self> {
+        BYTE_TO_OPCODE_MAP.get(&byte).copied()
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        STR_TO_OPCODE_MAP.get(s.to_uppercase().as_str()).copied()
+    }
+
+    pub fn metadata(&self) -> OpcodeMetadata {
+        OPCODE_METADATA
+            .iter()
+            .find(|&&(opcode, _)| opcode == *self)
+            .unwrap()
+            .1
+    }
+}
+
 impl From<&str> for Opcode {
     fn from(value: &str) -> Self {
         let uppercase = value.to_uppercase();
-        return match uppercase.as_str() {
-            "LOAD" => Opcode::LOAD,
-            "ADD" => Opcode::ADD,
-            "SUB" => Opcode::SUB,
-            "MUL" => Opcode::MUL,
-            "DIV" => Opcode::DIV,
-            "HLT" => Opcode::HLT,
-            "JMP" => Opcode::JMP,
-            "JMPF" => Opcode::JMPF,
-            "JPMB" => Opcode::JMPB,
-            "EQ" => Opcode::EQ,
-            "NEQ" => Opcode::NEQ,
-            "GT" => Opcode::GT,
-            "LT" => Opcode::LT,
-            "GTE" => Opcode::GTE,
-            "LTE" => Opcode::LTE,
-            "JMPE" => Opcode::JMPE,
-            "DJMPE" => Opcode::DJMPE,
-            "ALOC" => Opcode::ALOC,
-            "INC" => Opcode::INC,
-            "DEC" => Opcode::DEC,
-            "NOP" => Opcode::NOP,
-            "PRTS" => Opcode::PRTS,
-            "LOADF64" => Opcode::LOADF64,
-            "ADDF64" => Opcode::ADDF64,
-            "SUBF64" => Opcode::SUBF64,
-            "MULF64" => Opcode::MULF64,
-            "DIVF64" => Opcode::DIVF64,
-            "EQF64" => Opcode::EQF64,
-            "NEQF64" => Opcode::NEQF64,
-            "GTF64" => Opcode::GTF64,
-            "GTEF64" => Opcode::GTEF64,
-            "LTF64" => Opcode::LTF64,
-            "LTEF64" => Opcode::LTEF64,
-            "SHL" => Opcode::SHL,
-            "SHR" => Opcode::SHR,
-            "AND" => Opcode::AND,
-            "OR" => Opcode::OR,
-            "XOR" => Opcode::XOR,
-            "NOT" => Opcode::NOT,
-            "LUI" => Opcode::LUI,
-            "CLOOP" => Opcode::CLOOP,
-            "LOOP" => Opcode::LOOP,
-            "LOADM" => Opcode::LOADM,
-            "SETM" => Opcode::SETM,
-            "PUSH" => Opcode::PUSH,
-            "POP" => Opcode::POP,
-            "CALL" => Opcode::CALL,
-            "RET" => Opcode::RET,
-            "DJMP" => Opcode::DJMP,
-            "BKPT" => Opcode::BKPT,
-            _ => Opcode::IGL,
-        };
+        return Opcode::from_str(uppercase.as_str())
+            .or(Some(Opcode::IGL))
+            .expect("failed to convert str to opcode");
     }
 }
 
 impl From<u8> for Opcode {
     fn from(value: u8) -> Self {
-        return match value {
-            0 => Opcode::LOAD,
-            1 => Opcode::ADD,
-            2 => Opcode::SUB,
-            3 => Opcode::MUL,
-            4 => Opcode::DIV,
-            5 => Opcode::HLT,
-            6 => Opcode::JMP,
-            7 => Opcode::JMPF,
-            8 => Opcode::JMPB,
-            9 => Opcode::EQ,
-            10 => Opcode::NEQ,
-            11 => Opcode::GT,
-            12 => Opcode::LT,
-            13 => Opcode::GTE,
-            14 => Opcode::LTE,
-            15 => Opcode::JMPE,
-            16 => Opcode::DJMPE,
-            17 => Opcode::ALOC,
-            18 => Opcode::INC,
-            19 => Opcode::DEC,
-            20 => Opcode::NOP,
-            21 => Opcode::PRTS,
-            22 => Opcode::LOADF64,
-            23 => Opcode::ADDF64,
-            24 => Opcode::SUBF64,
-            25 => Opcode::MULF64,
-            26 => Opcode::DIVF64,
-            27 => Opcode::EQF64,
-            28 => Opcode::NEQF64,
-            29 => Opcode::GTF64,
-            30 => Opcode::GTEF64,
-            31 => Opcode::LTF64,
-            32 => Opcode::LTEF64,
-            33 => Opcode::SHL,
-            34 => Opcode::SHR,
-            35 => Opcode::AND,
-            36 => Opcode::OR,
-            37 => Opcode::XOR,
-            38 => Opcode::NOT,
-            39 => Opcode::LUI,
-            40 => Opcode::CLOOP,
-            41 => Opcode::LOOP,
-            42 => Opcode::LOADM,
-            43 => Opcode::SETM,
-            44 => Opcode::PUSH,
-            45 => Opcode::POP,
-            46 => Opcode::CALL,
-            47 => Opcode::RET,
-            48 => Opcode::DJMP,
-            49 => Opcode::BKPT,
-            _ => Opcode::IGL,
-        };
+        return Opcode::from_byte(value)
+            .or(Some(Opcode::IGL))
+            .expect("failed to convert byte to opcode");
     }
 }
 
 impl From<Opcode> for u8 {
     fn from(op: Opcode) -> Self {
-        match op {
-            Opcode::LOAD => 0,
-            Opcode::ADD => 1,
-            Opcode::SUB => 2,
-            Opcode::MUL => 3,
-            Opcode::DIV => 4,
-            Opcode::HLT => 5,
-            Opcode::JMP => 6,
-            Opcode::JMPF => 7,
-            Opcode::JMPB => 8,
-            Opcode::EQ => 9,
-            Opcode::NEQ => 10,
-            Opcode::GT => 11,
-            Opcode::LT => 12,
-            Opcode::GTE => 13,
-            Opcode::LTE => 14,
-            Opcode::JMPE => 15,
-            Opcode::DJMPE => 16,
-            Opcode::ALOC => 17,
-            Opcode::INC => 18,
-            Opcode::DEC => 19,
-            Opcode::NOP => 20,
-            Opcode::PRTS => 21,
-            Opcode::LOADF64 => 22,
-            Opcode::ADDF64 => 23,
-            Opcode::SUBF64 => 24,
-            Opcode::MULF64 => 25,
-            Opcode::DIVF64 => 26,
-            Opcode::EQF64 => 27,
-            Opcode::NEQF64 => 28,
-            Opcode::GTF64 => 29,
-            Opcode::GTEF64 => 30,
-            Opcode::LTF64 => 31,
-            Opcode::LTEF64 => 32,
-            Opcode::SHL => 33,
-            Opcode::SHR => 34,
-            Opcode::AND => 35,
-            Opcode::OR => 36,
-            Opcode::XOR => 37,
-            Opcode::NOT => 38,
-            Opcode::LUI => 39,
-            Opcode::CLOOP => 40,
-            Opcode::LOOP => 41,
-            Opcode::LOADM => 42,
-            Opcode::SETM => 43,
-            Opcode::PUSH => 44,
-            Opcode::POP => 45,
-            Opcode::CALL => 46,
-            Opcode::RET => 47,
-            Opcode::DJMP => 48,
-            Opcode::BKPT => 49,
-            Opcode::IGL => 100,
-        }
+        OPCODE_METADATA
+            .iter()
+            .find(|&&(opcode, _)| opcode == op)
+            .map(|&(_, ref metadata)| metadata.bytecode)
+            .expect("Opcode not found in metadata")
     }
 }
 

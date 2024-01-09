@@ -372,10 +372,6 @@ impl VM {
                 error!("Illegal instruction encountered");
                 return ExecutionStatus::Done(1);
             }
-            _ => {
-                error!("Unrecognized opcode found");
-                return ExecutionStatus::Done(1);
-            }
         };
         ExecutionStatus::Continue
     }

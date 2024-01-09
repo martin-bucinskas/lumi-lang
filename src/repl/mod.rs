@@ -98,7 +98,7 @@ impl REPL {
             self.command_buffer.push(buffer.to_string());
             self.history.push(buffer.to_string());
 
-            if (buffer.starts_with("!")) {
+            if buffer.starts_with("!") {
                 self.execute_command(&buffer);
             } else {
                 let parsed_program = parse_program(buffer);
@@ -118,30 +118,30 @@ impl REPL {
         }
     }
 
-    fn get_user_input(&self, prompt: Option<String>) -> Option<String> {
-        if prompt.is_some() {
-            print!("{}", prompt.unwrap());
-        }
-
-        let stdin = io::stdin();
-        let flush_result = io::stdout().flush();
-        if flush_result.is_err() {
-            error!("Failed to flush stdout: {:?}", flush_result.err().unwrap());
-            return None;
-        }
-
-        let mut tmp = String::new();
-        match stdin.read_line(&mut tmp) {
-            Ok(user_input) => {
-                debug!("Read in {} bytes from user input", user_input);
-                Some(tmp.trim().to_string())
-            }
-            Err(err) => {
-                error!("Failed to read line from user input: {:?}", err);
-                None
-            }
-        }
-    }
+    // fn get_user_input(&self, prompt: Option<String>) -> Option<String> {
+    //     if prompt.is_some() {
+    //         print!("{}", prompt.unwrap());
+    //     }
+    //
+    //     let stdin = io::stdin();
+    //     let flush_result = io::stdout().flush();
+    //     if flush_result.is_err() {
+    //         error!("Failed to flush stdout: {:?}", flush_result.err().unwrap());
+    //         return None;
+    //     }
+    //
+    //     let mut tmp = String::new();
+    //     match stdin.read_line(&mut tmp) {
+    //         Ok(user_input) => {
+    //             debug!("Read in {} bytes from user input", user_input);
+    //             Some(tmp.trim().to_string())
+    //         }
+    //         Err(err) => {
+    //             error!("Failed to read line from user input: {:?}", err);
+    //             None
+    //         }
+    //     }
+    // }
 
     /// Reads in a file in binary format until EOF.
     fn get_binary_data_from_file(&mut self, file_path: String) -> Option<Vec<u8>> {
@@ -170,31 +170,31 @@ impl REPL {
         }
     }
 
-    /// Reads in a file in string format until EOF.
-    fn get_data_from_file(&mut self, file_path: String) -> Option<String> {
-        let filename = Path::new(&file_path);
-        let mut file = match File::open(filename) {
-            Ok(file) => file,
-            Err(err) => {
-                error!(
-                    "An error occurred when opening file '{}': {:?}",
-                    filename.to_str().unwrap(),
-                    err
-                );
-                return None;
-            }
-        };
-
-        let mut contents = String::new();
-        match file.read_to_string(&mut contents) {
-            Ok(length) => {
-                info!("Read in total of {} bytes", length);
-                Some(contents)
-            }
-            Err(err) => {
-                error!("An error occurred whilst reading file: {:?}", err);
-                None
-            }
-        }
-    }
+    // /// Reads in a file in string format until EOF.
+    // fn get_data_from_file(&mut self, file_path: String) -> Option<String> {
+    //     let filename = Path::new(&file_path);
+    //     let mut file = match File::open(filename) {
+    //         Ok(file) => file,
+    //         Err(err) => {
+    //             error!(
+    //                 "An error occurred when opening file '{}': {:?}",
+    //                 filename.to_str().unwrap(),
+    //                 err
+    //             );
+    //             return None;
+    //         }
+    //     };
+    //
+    //     let mut contents = String::new();
+    //     match file.read_to_string(&mut contents) {
+    //         Ok(length) => {
+    //             info!("Read in total of {} bytes", length);
+    //             Some(contents)
+    //         }
+    //         Err(err) => {
+    //             error!("An error occurred whilst reading file: {:?}", err);
+    //             None
+    //         }
+    //     }
+    // }
 }

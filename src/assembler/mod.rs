@@ -180,26 +180,6 @@ impl Assembler {
         true
     }
 
-    // fn write_lumi_header(&self) -> Vec<u8> {
-    //     let mut header = vec![];
-    //     for byte in LUMI_HEADER_PREFIX.into_iter() {
-    //         header.push(byte.clone());
-    //     }
-    //     while header.len() <= LUMI_HEADER_LENGTH {
-    //         header.push(0u8);
-    //     }
-    //
-    //     // calculate and write the starting offset for the VM to know where the RO section ends
-    //     debug!("RO Length: {}", self.ro.len());
-    //     let mut wtr: Vec<u8> = vec![];
-    //     wtr.write_u32::<LittleEndian>(self.ro.len() as u32).unwrap();
-    //     for byte in &wtr {
-    //         debug!("Written offset bytes: {:02X}", byte);
-    //     }
-    //     header.append(&mut wtr);
-    //     header
-    // }
-
     fn strip_extension(&self, input: &str) -> String {
         if input.ends_with(".lumi") {
             input.strip_suffix(".lumi").unwrap().to_string()

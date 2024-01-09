@@ -347,6 +347,7 @@ dependencies = [
  "clap_derive",
  "colored",
  "env_logger",
+ "lazy_static",
  "log",
  "nom",
  "nom-supreme",

@@ -1,5 +1,4 @@
 use crate::vm::VM;
-use std::f64::EPSILON;
 
 impl VM {
     pub(crate) fn comparison_execute_equal(&mut self) {

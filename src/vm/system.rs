@@ -33,6 +33,9 @@ impl VM {
         );
     }
 
+    /// Opcode: PRTS
+    ///
+    /// Arguments: 24-bit heap offset
     pub(crate) fn system_execute_print_string(&mut self) {
         let starting_offset = self.next_24_bits() as usize;
         let mut ending_offset = starting_offset;
@@ -61,6 +64,10 @@ impl VM {
     /// Creates a return destination.
     /// Gets the address destination to jump to.
     /// Pushes the return address to stack.
+    ///
+    /// Opcode: CALL
+    ///
+    /// Arguments: 16-bit destination (direct PC address)
     pub(crate) fn system_execute_call(&mut self) {
         let return_destination = self.pc + 3;
         let destination = self.next_16_bits();
@@ -70,12 +77,18 @@ impl VM {
         self.pc = destination as usize;
     }
 
+    /// Opcode: RET
+    ///
+    /// Arguments: none
     pub(crate) fn system_execute_return(&mut self) {
         self.sp = self.bp;
         self.bp = self.stack.pop().unwrap() as usize;
         self.pc = self.stack.pop().unwrap() as usize;
     }
 
+    /// Opcode: BKPT
+    ///
+    /// Arguments: none
     pub(crate) fn system_execute_breakpoint(&mut self) -> bool {
         loop {
             info!(
@@ -103,7 +116,7 @@ impl VM {
                         .expect("Failed to read line");
                     let split = input.split_whitespace();
                     let tokens: Vec<String> = split.map(|s| s.to_string()).collect();
-                    let mut watch_type;
+                    let watch_type;
                     if tokens[0].eq_ignore_ascii_case("memory") {
                         watch_type = WatchType::Memory(
                             usize::from_str(&tokens[1].trim())
