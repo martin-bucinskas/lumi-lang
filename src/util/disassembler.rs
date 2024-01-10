@@ -1,5 +1,6 @@
 use crate::instruction::{Opcode, OperandType};
 use crate::util::header_utils::LUMI_HEADER_LENGTH;
+use crate::util::to_hex;
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::Cursor;
 
@@ -20,7 +21,7 @@ pub fn disassemble(bytecode: &[u8]) -> Result<String, DisassemblyError> {
         let opcode = Opcode::from(opcode_byte);
 
         let metadata = opcode.metadata();
-        output.push_str(&*format!("{}: {}", pc, metadata.str_symbol));
+        output.push_str(&*format!("0x{}: {}", to_hex(pc), metadata.str_symbol));
         output.push_str(" ");
         let mut offset = 1;
         for operand_type in metadata.operand_types {
@@ -37,7 +38,11 @@ pub fn disassemble(bytecode: &[u8]) -> Result<String, DisassemblyError> {
                 }
             }
             if pc + offset < bytecode.len() && !empty {
-                output.push_str(&*format!("{}", bytecode[pc + offset]));
+                if operand_type == OperandType::Address {
+                    output.push_str(&*format!("0x{}", to_hex(bytecode[pc + offset] as usize)));
+                } else {
+                    output.push_str(&*format!("{}", bytecode[pc + offset]));
+                }
             }
             output.push_str(" ");
             offset = offset + 1;
