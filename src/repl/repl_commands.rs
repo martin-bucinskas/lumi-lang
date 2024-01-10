@@ -1,4 +1,5 @@
 use super::REPL;
+use crate::util::disassembler::disassemble;
 use crate::util::visualize_program;
 use log::{error, info};
 
@@ -88,5 +89,20 @@ impl REPL {
             true => info!("File successfully assembled"),
             false => error!("Failed to assemble file"),
         };
+    }
+
+    pub(crate) fn command_disassemble(&mut self, _args: Vec<String>) {
+        let assembly = disassemble(self.vm.get_program());
+
+        if assembly.is_err() {
+            error!(
+                "failed to disassemble program: {:?}",
+                assembly.clone().err().unwrap()
+            );
+        }
+
+        let program = assembly.unwrap();
+        info!("Disassembled program:");
+        info!("{}", program);
     }
 }

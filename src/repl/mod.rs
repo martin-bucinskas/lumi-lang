@@ -79,6 +79,9 @@ impl REPL {
                 "!run" => {
                     self.command_run(args);
                 }
+                "!disassemble" => {
+                    self.command_disassemble(args);
+                }
                 _ => {
                     error!("Unrecognized command");
                 }

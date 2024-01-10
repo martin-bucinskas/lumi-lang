@@ -1,5 +1,5 @@
+pub mod disassembler;
 pub mod header_utils;
-mod disassembler;
 
 use crate::util::header_utils::LUMI_HEADER_LENGTH;
 use byteorder::{LittleEndian, ReadBytesExt};
