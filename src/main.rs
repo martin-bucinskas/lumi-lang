@@ -11,20 +11,26 @@ extern crate nom;
 extern crate nom_supreme;
 
 use crate::cli::{Args, Commands};
+use crate::util::init_lumi_home;
+use crate::util::logging::setup_logging;
 use clap::Parser;
-use log::{error, info};
+use colored::{ColoredString, Colorize};
+use fern::Dispatch;
+use log::{error, info, Level, LevelFilter};
 use std::env;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::Read;
 use std::path::Path;
 
 pub const VM_VERSION: &str = "1.0.0";
 
 fn main() {
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "debug");
+    init_lumi_home();
+    if let Err(e) = setup_logging() {
+        eprintln!("Error setting up logging: {}", e);
+        return;
     }
-    env_logger::init();
+
     let args = Args::parse();
 
     info!("Lumi General Programming Language VM v{}", VM_VERSION);

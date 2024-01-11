@@ -1,10 +1,32 @@
 pub mod disassembler;
 pub mod header_utils;
+pub mod logging;
 
 use crate::util::header_utils::LUMI_HEADER_LENGTH;
 use byteorder::{LittleEndian, ReadBytesExt};
 use colored::Colorize;
+use std::fs;
 use std::io::Cursor;
+use std::path::PathBuf;
+
+pub const LUMI_HOME: &str = ".lumi";
+pub const LUMI_LOG_FILE: &str = "lumi-log.log";
+
+pub fn get_lumi_home_path() -> PathBuf {
+    let home_dir = dirs::home_dir().expect("Could not find home directory");
+    home_dir.join(LUMI_HOME)
+}
+
+pub fn get_lumi_log_path() -> PathBuf {
+    get_lumi_home_path().join(LUMI_LOG_FILE)
+}
+
+pub fn init_lumi_home() {
+    let lumi_home_path = get_lumi_home_path();
+    if !lumi_home_path.exists() {
+        fs::create_dir_all(&lumi_home_path).expect("Failed to create lumi home directory");
+    }
+}
 
 pub fn to_hex(value: usize) -> String {
     format!("{:08x}", value)
