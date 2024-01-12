@@ -20,9 +20,11 @@ pub struct REPL {
 }
 
 impl REPL {
-    pub fn new() -> REPL {
+    pub fn new(num_threads: usize) -> REPL {
+        let mut vm = VM::new();
+        vm.logical_cores = num_threads;
         REPL {
-            vm: VM::new(),
+            vm,
             command_buffer: vec![],
             asm: Assembler::new(),
             scheduler: Scheduler::new(),

@@ -1,24 +1,15 @@
-pub mod assembler;
-mod cli;
-pub mod instruction;
-pub mod repl;
-mod scheduler;
-mod util;
-pub mod vm;
-
 extern crate clap;
 extern crate nom;
 extern crate nom_supreme;
+extern crate num_cpus;
 
-use crate::cli::{Args, Commands};
-use crate::util::init_lumi_home;
-use crate::util::logging::setup_logging;
 use clap::Parser;
-use colored::{ColoredString, Colorize};
-use fern::Dispatch;
-use log::{error, info, Level, LevelFilter};
-use std::env;
-use std::fs::{File, OpenOptions};
+use log::{error, info};
+use lumi::cli::{Args, Commands};
+use lumi::util::init_lumi_home;
+use lumi::util::logging::setup_logging;
+use lumi::{assembler, repl};
+use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
@@ -44,15 +35,20 @@ fn main() {
                 error!("No input file provided to assemble");
             }
         }
-        Commands::Console {} => {
-            start_repl();
+        Commands::Console { threads } => {
+            let num_threads = threads.unwrap_or(num_cpus::get());
+            start_repl(num_threads);
         }
-        Commands::Run { input_file } => {
+        Commands::Run {
+            input_file,
+            threads,
+        } => {
             if let Some(file) = input_file {
                 info!("Executing file: {}", file);
 
                 let bytecode = read_binary_file(&file);
-                start_repl_with_bytecode(bytecode);
+                let num_threads = threads.unwrap_or(num_cpus::get());
+                start_repl_with_bytecode(bytecode, num_threads);
             } else {
                 error!("No input file provided to assemble");
             }
@@ -60,13 +56,13 @@ fn main() {
     }
 }
 
-fn start_repl() {
-    let mut repl = repl::REPL::new();
+fn start_repl(num_threads: usize) {
+    let mut repl = repl::REPL::new(num_threads);
     repl.run();
 }
 
-fn start_repl_with_bytecode(bytecode: Vec<u8>) {
-    let mut repl = repl::REPL::new();
+fn start_repl_with_bytecode(bytecode: Vec<u8>, num_threads: usize) {
+    let mut repl = repl::REPL::new(num_threads);
     repl.load(bytecode);
     let events = repl.execute();
     for event in &events {

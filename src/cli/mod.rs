@@ -23,11 +23,18 @@ pub enum Commands {
         input_file: Option<String>,
     },
     /// Opens a REPL console
-    Console {},
+    Console {
+        /// Number of OS threads for the VM to utilize
+        #[arg(short, long)]
+        threads: Option<usize>,
+    },
     /// Runs an assembled program on the VM, opens in REPL mode
     Run {
         /// Path to the assembled .bin file to run
         #[arg(short, long)]
         input_file: Option<String>,
+        /// Number of OS threads for the VM to utilize
+        #[arg(short, long)]
+        threads: Option<usize>,
     },
 }

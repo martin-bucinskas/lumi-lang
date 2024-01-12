@@ -49,17 +49,17 @@ pub struct VMEvent {
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
     /// Array simulating hardware registers
-    pub(crate) registers: [i32; 32],
+    pub registers: [i32; 32],
     /// Array simulating floating point hardware registers
-    pub(crate) float_registers: [f64; 32],
+    pub float_registers: [f64; 32],
     /// Program counter tracking byte execution
     pub(crate) pc: usize,
     /// Bytecode of the program being run
-    pub(crate) program: Vec<u8>,
+    pub program: Vec<u8>,
     /// The VMs heap memory
-    pub(crate) heap: Vec<u8>,
+    pub heap: Vec<u8>,
     /// The VMs stack memory
-    pub(crate) stack: Vec<i32>,
+    pub stack: Vec<i32>,
     /// Remainder of modulo division operations
     pub(crate) remainder: u32,
     /// Result of last comparison operation
@@ -78,6 +78,8 @@ pub struct VM {
     pub(crate) watch_variables: HashMap<WatchType, WatchVariable>,
     /// Unique randomly generated UUID for identifying this VM
     pub id: Uuid,
+    /// Amount of cores detected
+    pub logical_cores: usize,
 }
 
 impl VM {
@@ -116,6 +118,7 @@ impl VM {
             bp: 0,
             watch_variables: HashMap::new(),
             id: Uuid::new_v4(),
+            logical_cores: num_cpus::get(),
         }
     }
 
