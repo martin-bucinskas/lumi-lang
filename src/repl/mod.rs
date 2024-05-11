@@ -20,9 +20,14 @@ pub struct REPL {
 }
 
 impl REPL {
-    pub fn new(num_threads: usize) -> REPL {
+    pub fn new(num_threads: usize, enable_ssh: bool, use_ssh_port: u16) -> REPL {
         let mut vm = VM::new();
         vm.logical_cores = num_threads;
+
+        if enable_ssh {
+            info!("Enabling SSH with port: {}", use_ssh_port);
+        }
+
         REPL {
             vm,
             command_buffer: vec![],

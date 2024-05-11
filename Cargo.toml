@@ -22,6 +22,15 @@ serde_derive = "1.0.193"
 lazy_static = "1.4.0"
 dirs = "5.0.1"
 num_cpus = "1.16.0"
+russh = { version = "0.43.0" }
+russh-keys = { version = "0.43.0" }
+futures = "0.3.30"
+tokio = "1.35.1"
+async-trait = { version = "0.1.76", features = [] }
+anyhow = { version = "1.0.79", features = [] }
+base64ct = "1.6.0"
+base64 = "0.22.1"
+ed25519-dalek = "2.1.1"
 
 [profile.dev]
 opt-level = 0

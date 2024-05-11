@@ -27,6 +27,12 @@ pub enum Commands {
         /// Number of OS threads for the VM to utilize
         #[arg(short, long)]
         threads: Option<usize>,
+        /// Enable SSH server
+        #[arg(long)]
+        enable_ssh: bool,
+        /// Port for SSH server
+        #[arg(short, long)]
+        ssh_port: Option<u16>,
     },
     /// Runs an assembled program on the VM, opens in REPL mode
     Run {
@@ -36,5 +42,17 @@ pub enum Commands {
         /// Number of OS threads for the VM to utilize
         #[arg(short, long)]
         threads: Option<usize>,
+        /// Enable SSH server
+        #[arg(long)]
+        enable_ssh: bool,
+        /// Port for SSH server
+        #[arg(short, long)]
+        ssh_port: Option<u16>,
+    },
+    /// Add an SSH key to the cluster
+    AddSshKey {
+        /// Path to the public key to be used for SSH
+        #[arg(short, long)]
+        pub_key_file: String,
     },
 }

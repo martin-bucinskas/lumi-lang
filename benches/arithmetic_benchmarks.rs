@@ -13,7 +13,7 @@ fn execute_add(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_add", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_add", move |b| b.iter(clos));
 }
 
 fn execute_sub(c: &mut Criterion) {
@@ -24,7 +24,7 @@ fn execute_sub(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_sub", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_sub", move |b| b.iter(clos));
 }
 
 fn execute_mul(c: &mut Criterion) {
@@ -35,7 +35,7 @@ fn execute_mul(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_mul", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_mul", move |b| b.iter(clos));
 }
 
 fn execute_div(c: &mut Criterion) {
@@ -48,7 +48,7 @@ fn execute_div(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_div", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_div", move |b| b.iter(clos));
 }
 
 fn execute_add_f64(c: &mut Criterion) {
@@ -59,7 +59,7 @@ fn execute_add_f64(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_add_f64", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_add_f64", move |b| b.iter(clos));
 }
 
 fn execute_sub_f64(c: &mut Criterion) {
@@ -70,7 +70,7 @@ fn execute_sub_f64(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_sub_f64", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_sub_f64", move |b| b.iter(clos));
 }
 
 fn execute_mul_f64(c: &mut Criterion) {
@@ -81,7 +81,7 @@ fn execute_mul_f64(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_mul_f64", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_mul_f64", move |b| b.iter(clos));
 }
 
 fn execute_div_f64(c: &mut Criterion) {
@@ -94,7 +94,7 @@ fn execute_div_f64(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_div_f64", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_div_f64", move |b| b.iter(clos));
 }
 
 criterion_group! {

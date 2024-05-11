@@ -13,7 +13,7 @@ fn execute_load(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_load", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_load", move |b| b.iter(clos));
 }
 
 fn execute_load_f64(c: &mut Criterion) {
@@ -24,7 +24,7 @@ fn execute_load_f64(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_load_f64", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_load_f64", move |b| b.iter(clos));
 }
 
 fn execute_allocate(c: &mut Criterion) {
@@ -35,7 +35,7 @@ fn execute_allocate(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_allocate", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_allocate", move |b| b.iter(clos));
 }
 
 fn execute_lui(c: &mut Criterion) {
@@ -46,7 +46,7 @@ fn execute_lui(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_lui", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_lui", move |b| b.iter(clos));
 }
 
 fn execute_load_memory(c: &mut Criterion) {
@@ -58,7 +58,7 @@ fn execute_load_memory(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_load_memory", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_load_memory", move |b| b.iter(clos));
 }
 
 fn execute_set_memory(c: &mut Criterion) {
@@ -70,7 +70,7 @@ fn execute_set_memory(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_set_memory", move |b| b.iter_with_large_drop(clos));
+    c.bench_function("execute_set_memory", move |b| b.iter(clos));
 }
 
 fn execute_push_to_stack(c: &mut Criterion) {
@@ -81,9 +81,7 @@ fn execute_push_to_stack(c: &mut Criterion) {
         test_vm.run_once();
     };
 
-    c.bench_function("execute_push_to_stack", move |b| {
-        b.iter_with_large_drop(clos)
-    });
+    c.bench_function("execute_push_to_stack", move |b| b.iter(clos));
 }
 
 fn execute_pop_from_stack(c: &mut Criterion) {
