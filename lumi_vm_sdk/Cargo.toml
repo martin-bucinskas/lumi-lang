@@ -1,0 +1,20 @@
+[package]
+name = "lumi_vm_sdk"
+version = "2.0.0"
+edition = "2021"
+description = "SDK for extending the Lumi Virtual Machine (LVM) with plugins."
+authors = ["Martin Bucinskas <martin@martinb.dev>"]
+readme = "README.md"
+keywords = ["lumi", "lvm", "extension", "sdk", "plugin"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "lumi_vm_sdk"
+crate-type = ["rlib", "dylib"]
+
+[features]
+default = []
+
+[dependencies]
+log = "0.4.20"

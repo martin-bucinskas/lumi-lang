@@ -1,0 +1,10 @@
+.data
+test1: .asciiz 'Hello'
+.code
+load $0 #100
+load $1 #1
+add $2 $0 $1
+sub $3 $0 $1
+mul $4 $0 $1
+div $5 $0 $1
+hlt
