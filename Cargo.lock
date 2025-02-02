@@ -1135,14 +1135,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lumi_lang"
-version = "1.0.0"
-dependencies = [
- "nom",
- "nom-supreme",
-]
-
-[[package]]
 name = "lumi_vm_sdk"
 version = "2.0.0"
 dependencies = [

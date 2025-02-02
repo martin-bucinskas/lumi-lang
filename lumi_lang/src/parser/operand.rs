@@ -30,9 +30,10 @@ pub fn integer_operand(input: &str) -> IResult<&str, Token, VerboseError<&str>> 
   match i64::from_str(&num_string) {
     Ok(value) => Ok((remaining_input, Token::Integer { value })),
     Err(_) => {
-      Err(VerboseError {
-        errors: vec![(remaining_input, VerboseErrorKind::Context("Parse Error"))],
-      })
+      let error = VerboseError {
+        errors: vec![(remaining_input, VerboseErrorKind::Context("Parsing an integer operand"))],
+      };
+      Err(nom::Err::Error(error))
     }
   }
 }

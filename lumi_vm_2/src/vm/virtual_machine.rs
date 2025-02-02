@@ -9,6 +9,8 @@ use uuid::Uuid;
 use lumi_asm::instruction::Opcode;
 use lumi_asm::header_utils::{verify_header, LUMI_HEADER_LENGTH};
 use lumi_vm_sdk::{LumiVmContext, LumiVmPlugin};
+use crate::vm::extensions::load_extensions;
+use crate::vm::operations::InstructionHandler;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VMEventType {
@@ -22,6 +24,7 @@ pub enum VMEventType {
 pub enum ExecutionStatus {
   Continue,
   BreakpointHit,
+  Crash(u32),
   Done(u32),
 }
 
@@ -75,6 +78,7 @@ pub struct VirtualMachine {
   pub sp: usize,
   pub bp: usize,
   pub watch_variables: HashMap<WatchType, WatchVariable>,
+  pub instruction_table: HashMap<Opcode, InstructionHandler>,
 }
 
 impl VirtualMachine {
@@ -96,15 +100,103 @@ impl VirtualMachine {
       sp: 0,
       bp: 0,
       watch_variables: HashMap::new(),
+      instruction_table: HashMap::new(),
     }
   }
   
-  pub fn load_extensions(path: &str) -> Result<Box<dyn LumiVmPlugin>, Box<dyn Error>> {
-    unsafe {
-      let lib = Library::new(path)?;
-      let create_extension_fn: Symbol<extern "C" fn() -> Box<dyn LumiVmPlugin>> =
-        lib.get(b"create_extension")?;
-      Ok(create_extension_fn())
+  pub fn initialize() -> Self {
+    let mut vm = VirtualMachine::new();
+    vm.initialize_instruction_table();
+    vm
+  }
+  
+  fn initialize_instruction_table(&mut self) {
+    self.instruction_table.insert(Opcode::LOAD, VirtualMachine::memory_execute_load);
+    self.instruction_table.insert(Opcode::LOADF64, VirtualMachine::memory_execute_load_f64);
+    self.instruction_table.insert(Opcode::ALOC, VirtualMachine::memory_execute_allocate);
+    self.instruction_table.insert(Opcode::LUI, VirtualMachine::memory_execute_load_upper_immediate);
+    self.instruction_table.insert(Opcode::SETM, VirtualMachine::memory_execute_set_memory);
+    self.instruction_table.insert(Opcode::LOADM, VirtualMachine::memory_execute_load_memory);
+    self.instruction_table.insert(Opcode::PUSH, VirtualMachine::memory_execute_push_to_stack);
+    self.instruction_table.insert(Opcode::POP, VirtualMachine::memory_execute_pop_from_stack);
+    
+    self.instruction_table.insert(Opcode::ADD, VirtualMachine::arithmetic_execute_add);
+    self.instruction_table.insert(Opcode::SUB, VirtualMachine::arithmetic_execute_sub);
+    self.instruction_table.insert(Opcode::MUL, VirtualMachine::arithmetic_execute_mul);
+    self.instruction_table.insert(Opcode::DIV, VirtualMachine::arithmetic_execute_div);
+    
+    self.instruction_table.insert(Opcode::ADDF64, VirtualMachine::arithmetic_execute_add_f64);
+    self.instruction_table.insert(Opcode::SUBF64, VirtualMachine::arithmetic_execute_sub_f64);
+    self.instruction_table.insert(Opcode::MULF64, VirtualMachine::arithmetic_execute_mul_f64);
+    self.instruction_table.insert(Opcode::DIVF64, VirtualMachine::arithmetic_execute_div_f64);
+    
+    self.instruction_table.insert(Opcode::INC, VirtualMachine::arithmetic_execute_increment);
+    self.instruction_table.insert(Opcode::DEC, VirtualMachine::arithmetic_execute_decrement);
+    
+    self.instruction_table.insert(Opcode::JMP, VirtualMachine::control_execute_jump);
+    self.instruction_table.insert(Opcode::JMPF, VirtualMachine::control_execute_jump_forward);
+    self.instruction_table.insert(Opcode::JMPB, VirtualMachine::control_execute_jump_backward);
+    self.instruction_table.insert(Opcode::JMPE, VirtualMachine::control_execute_jump_if_equal);
+    self.instruction_table.insert(Opcode::DJMP, VirtualMachine::control_execute_direct_jump);
+    self.instruction_table.insert(Opcode::DJMPE, VirtualMachine::control_execute_direct_jump_if_equal);
+    self.instruction_table.insert(Opcode::LOOP, VirtualMachine::control_execute_loop);
+    self.instruction_table.insert(Opcode::CLOOP, VirtualMachine::control_execute_create_loop);
+    
+    self.instruction_table.insert(Opcode::EQ, VirtualMachine::comparison_execute_equal);
+    self.instruction_table.insert(Opcode::NEQ, VirtualMachine::comparison_execute_not_equal);
+    self.instruction_table.insert(Opcode::GT, VirtualMachine::comparison_execute_greater_than);
+    self.instruction_table.insert(Opcode::LT, VirtualMachine::comparison_execute_less_than);
+    self.instruction_table.insert(Opcode::GTE, VirtualMachine::comparison_execute_greater_than_or_equal);
+    self.instruction_table.insert(Opcode::LTE, VirtualMachine::comparison_execute_less_than_or_equal);
+    
+    self.instruction_table.insert(Opcode::EQF64, VirtualMachine::comparison_execute_equal_f64);
+    self.instruction_table.insert(Opcode::NEQF64, VirtualMachine::comparison_execute_not_equal_f64);
+    self.instruction_table.insert(Opcode::GTF64, VirtualMachine::comparison_execute_greater_than_f64);
+    self.instruction_table.insert(Opcode::LTF64, VirtualMachine::comparison_execute_less_than_f64);
+    self.instruction_table.insert(Opcode::GTEF64, VirtualMachine::comparison_execute_greater_than_or_equal_f64);
+    self.instruction_table.insert(Opcode::LTEF64, VirtualMachine::comparison_execute_less_than_or_equal_f64);
+    
+    self.instruction_table.insert(Opcode::SHL, VirtualMachine::bitwise_execute_shift_left);
+    self.instruction_table.insert(Opcode::SHR, VirtualMachine::bitwise_execute_shift_right);
+    
+    self.instruction_table.insert(Opcode::AND, VirtualMachine::logical_execute_and);
+    self.instruction_table.insert(Opcode::OR, VirtualMachine::logical_execute_or);
+    self.instruction_table.insert(Opcode::XOR, VirtualMachine::logical_execute_xor);
+    self.instruction_table.insert(Opcode::NOT, VirtualMachine::logical_execute_not);
+    
+    self.instruction_table.insert(Opcode::PRTS, VirtualMachine::system_execute_print_string);
+    self.instruction_table.insert(Opcode::CALL, VirtualMachine::system_execute_call);
+    self.instruction_table.insert(Opcode::RET, VirtualMachine::system_execute_return);
+    
+    self.instruction_table.insert(Opcode::NOP, VirtualMachine::system_no_operation);
+    self.instruction_table.insert(Opcode::HLT, VirtualMachine::system_halt);
+    self.instruction_table.insert(Opcode::IGL, VirtualMachine::system_illegal_instruction);
+  }
+
+  fn dump_state(&self) {
+    info!("Registers: {:?}", self.registers);
+    info!("Float Registers: {:?}", self.float_registers);
+    info!("PC: {}", self.pc);
+    info!("SP: {}", self.sp);
+    info!("BP: {}", self.bp);
+    info!("Stack: {:?}", self.stack);
+    info!("Heap: {:?}", self.heap);
+    info!("RO Data: {:?}", self.ro_data);
+  }
+
+  // TODO: implement this
+  fn detect_changes(&mut self) {
+    for (watch_key, watch_var) in self.watch_variables.iter_mut() {
+      let current_value = match watch_key {
+        WatchType::Memory(addr) => self.heap[*addr] as f32,
+        WatchType::Register(index) => self.registers[*index] as f32,
+        WatchType::FloatRegister(index) => self.float_registers[*index] as f32,
+      };
+
+      if (current_value - watch_var.last_value).abs() > f32::EPSILON {
+        info!("Watched variable changed: {:?}", watch_var);
+        watch_var.last_value = current_value;
+      }
     }
   }
 
@@ -116,12 +208,7 @@ impl VirtualMachine {
       message: None,
     });
     
-    let mut extensions: Vec<Box<dyn LumiVmPlugin>> = vec![];
-    
-    // todo: load extensions from a directory
-    if let Ok(ext) = self.load_extensions("extensions") {
-      extensions.push(ext);
-    }
+    let mut extensions: Vec<Box<dyn LumiVmPlugin>> = load_extensions("./extensions");
     
     for ext in &mut extensions {
       let context = LumiVmContext {
@@ -161,6 +248,10 @@ impl VirtualMachine {
         }
         ExecutionStatus::BreakpointHit => {
           // in_step_mode = self.system_execute_breakpoint();
+        }
+        ExecutionStatus::Crash(code) => {
+          // TODO: log crash event
+          is_done = Some(code);
         }
         ExecutionStatus::Done(code) => {
           is_done = Some(code);
@@ -204,89 +295,12 @@ impl VirtualMachine {
     }
 
     let opcode = self.decode_opcode();
-    // todo: use a lookup table for instruction decoding
-    match opcode {
-      Opcode::HLT => {
-        info!("HLT encountered, exiting.");
-        return ExecutionStatus::Done(0);
-      }
-      Opcode::BKPT => {
-        self.next_8_bits();
-        self.next_8_bits();
-        self.next_8_bits();
-        return ExecutionStatus::BreakpointHit;
-      }
-      Opcode::LOAD => self.memory_execute_load(),
-      Opcode::LOADF64 => self.memory_execute_load_f64(),
-      Opcode::ALOC => self.memory_execute_allocate(),
-      Opcode::LUI => self.memory_execute_load_upper_immediate(),
-      Opcode::SETM => self.memory_execute_set_memory(),
-      Opcode::LOADM => self.memory_execute_load_memory(),
-      Opcode::PUSH => self.memory_execute_push_to_stack(),
-      Opcode::POP => self.memory_execute_pop_from_stack(),
-
-      Opcode::ADD => self.arithmetic_execute_add(),
-      Opcode::SUB => self.arithmetic_execute_sub(),
-      Opcode::MUL => self.arithmetic_execute_mul(),
-      Opcode::DIV => self.arithmetic_execute_div(),
-
-      Opcode::ADDF64 => self.arithmetic_execute_add_f64(),
-      Opcode::SUBF64 => self.arithmetic_execute_sub_f64(),
-      Opcode::MULF64 => self.arithmetic_execute_mul_f64(),
-      Opcode::DIVF64 => self.arithmetic_execute_div_f64(),
-
-      Opcode::INC => self.arithmetic_execute_increment(),
-      Opcode::DEC => self.arithmetic_execute_decrement(),
-
-      Opcode::JMP => self.control_execute_jump(),
-      Opcode::JMPF => self.control_execute_jump_forward(),
-      Opcode::JMPB => self.control_execute_jump_backward(),
-      Opcode::JMPE => self.control_execute_jump_if_equal(),
-      Opcode::DJMP => self.control_execute_direct_jump(),
-      Opcode::DJMPE => self.control_execute_direct_jump_if_equal(),
-      Opcode::LOOP => self.control_execute_loop(),
-      Opcode::CLOOP => self.control_execute_create_loop(),
-
-      Opcode::EQ => self.comparison_execute_equal(),
-      Opcode::NEQ => self.comparison_execute_not_equal(),
-      Opcode::GT => self.comparison_execute_greater_than(),
-      Opcode::LT => self.comparison_execute_less_than(),
-      Opcode::GTE => self.comparison_execute_greater_than_or_equal(),
-      Opcode::LTE => self.comparison_execute_less_than_or_equal(),
-
-      Opcode::EQF64 => self.comparison_execute_equal_f64(),
-      Opcode::NEQF64 => self.comparison_execute_not_equal_f64(),
-      Opcode::GTF64 => self.comparison_execute_greater_than_f64(),
-      Opcode::LTF64 => self.comparison_execute_less_than_f64(),
-      Opcode::GTEF64 => self.comparison_execute_greater_than_or_equal_f64(),
-      Opcode::LTEF64 => self.comparison_execute_less_than_or_equal_f64(),
-
-      Opcode::SHL => self.bitwise_execute_shift_left(),
-      Opcode::SHR => self.bitwise_execute_shift_right(),
-
-      Opcode::AND => self.logical_execute_and(),
-      Opcode::OR => self.logical_execute_or(),
-      Opcode::XOR => self.logical_execute_xor(),
-      Opcode::NOT => self.logical_execute_not(),
-
-
-      Opcode::PRTS => self.system_execute_print_string(),
-      Opcode::CALL => self.system_execute_call(),
-      Opcode::RET => self.system_execute_return(),
-
-      Opcode::NOP => {
-        self.next_8_bits();
-        self.next_8_bits();
-        self.next_8_bits();
-      }
-      Opcode::IGL => {
-        error!("Illegal instruction encountered.");
-        return ExecutionStatus::Done(1);
-      }
+    if let Some(handler) = self.instruction_table.get(&opcode) {
+      return handler(self);
+    } else {
+      error!("Illegal instruction: {:?}", opcode);
+      return ExecutionStatus::Done(1);
     }
-    
-    
-    ExecutionStatus::Continue
   }
 
   /// Decode the current opcode from the program and increment the program counter.

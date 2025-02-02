@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "lumi_lang",
+#    "lumi_lang",
     "lumi_vm_2",
     "lumi_asm",
     "lumi_vm_sdk",
