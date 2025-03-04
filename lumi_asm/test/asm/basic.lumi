@@ -1,0 +1,34 @@
+; This is a basic Lumi assembly program.
+; This defines a comment.
+
+; Changes the current section to .data
+.data
+GREETING: .asciiz "Hello, world!" ; Define a global static string variable
+N: .integer 5 ; Define a global static integer variable
+COUNTER: .integer 1 ; Define a global static integer variable
+
+; Changes the current section to .bss
+.bss
+RESULT: .integer 0 ; Define a global uninitialized integer variable
+
+; Changes the current section to .text
+.text
+main:
+    ; Print the greeting message
+    PRTS @GREETING
+
+    LOAD $0 @N ; Load the value of N into register $0
+    LOAD $1 @RESULT ; Load the value of RESULT into register $1
+    LOAD $2 @COUNTER ; Load the value of COUNTER into register $2
+
+FACTORIAL_LOOP:
+    MUL $1 $1 $2 ; Multiply the factorial result ($1 = $1 * $2)
+    INC $2
+    EQ $2 $0
+    JMPE END
+    JMP @FACTORIAL_LOOP
+
+END:
+    ; Halt the program
+    PRTS $1
+    HLT

@@ -1,0 +1,52 @@
+// Grammar for Lumi Assembly Language v2
+
+// NEWLINE = _{ "\n" | "\r\n" }
+COMMENT = _{ ";" ~ (!NEWLINE ~ ANY)* }
+WHITESPACE = _{ " " | "\t" }
+EMPTY_LINE = _{ WHITESPACE* ~ NEWLINE }
+
+int_immediate = @{ "-"? ~ (ASCII_DIGIT+) }
+float_immediate = @{ "-"? ~ (ASCII_DIGIT+) ~ "." ~ (ASCII_DIGIT+) }
+string_immediate = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+register = @{ "$" ~ (ASCII_DIGIT+) }
+identifier = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+
+label_declaration = { identifier ~ ":" }
+label_usage = { "@" ~ identifier }
+
+opcode = @{ !( "@" | "$" ) ~ ASCII_ALPHANUMERIC+ ~ !( ":" ) }
+operand = { register | int_immediate | float_immediate | string_immediate | label_usage }
+
+directive = { "." ~ (
+    "data" |
+    "bss" |
+    "text" |
+    "asciiz" |
+    "integer" |
+    "float"
+) }
+
+// A data declaration is a label followed by a directive and it's associated operand.
+data_declaration = {
+    label_declaration ~ directive ~ operand
+}
+
+// An instruction is an opcode followed by up to three operands.
+// The instruction may start with a label declaration.
+// Instruction format: [label_declaration]? [opcode] [operand1] [operand2] [operand3]
+instruction = {
+    label_declaration? ~ opcode ~ (operand){,3}
+}
+
+line = _{
+    (
+      directive
+      | data_declaration
+      | label_declaration
+      | instruction
+      | COMMENT
+    )
+    ~ NEWLINE?
+}
+
+program = { SOI ~ (line | EMPTY_LINE)* ~ NEWLINE? ~ EOI }

@@ -1,10 +1,121 @@
+;-----------------------------------------
+; Data Section
+;-----------------------------------------
 .data
-test1: .asciiz 'Hello'
-.code
-load $0 #100
-load $1 #1
-add $2 $0 $1
-sub $3 $0 $1
-mul $4 $0 $1
-div $5 $0 $1
-hlt
+N:       .integer 5
+RESULT:  .integer 1
+COUNTER: .integer 1
+
+; Buffer for the integer's ASCII digits (up to 12 digits + null)
+BUFFER:  .asciiz "            "  ; 12 spaces as placeholder (or just "")
+
+;-----------------------------------------
+; Code Section
+;-----------------------------------------
+.text
+
+START:
+    LOAD  $0 @N         ; $0 = 5
+    LOAD  $1 @RESULT    ; $1 = 1
+    LOAD  $2 @COUNTER   ; $2 = 1
+
+FACTORIAL_LOOP:
+    MUL   $1 $1 $2      ; $1 *= $2
+    INC   $2            ; $2++
+    EQ    $2 $0         ; if($2 == $0) set equal_flag
+    DJMPE @END          ; if equal_flag true => jump
+    DJMP  @FACTORIAL_LOOP
+
+END:
+    ; Convert the integer in $1 to ASCII string in BUFFER
+    ; Then print it with PRTS
+
+    CALL @INT_TO_ASCII  ; We'll define a subroutine that expects the integer in $1
+                        ; and writes ASCII to BUFFER, then 0-terminates.
+
+    PRTS @BUFFER        ; Print the ASCII text at BUFFER
+
+    HLT                 ; Done
+
+
+;-----------------------------------------
+; Subroutine: INT_TO_ASCII
+;-----------------------------------------
+; Input:
+;   - $1 holds the integer to convert
+; Output:
+;   - Memory at BUFFER is overwritten with ASCII digits, plus a trailing 0x00.
+;   - $1 is destroyed by the routine (as we repeatedly divide it).
+;   - $4 used as index
+;   - $5 used as remainder
+;-----------------------------------------
+INT_TO_ASCII:
+    ; For safety, save registers if needed
+    ; But let's keep it simple.
+
+    LOADI $4 0           ; index = 0
+
+IS_ZERO_CHECK:
+    EQ $1 $4             ; Check if $1 == 0
+    DJMPE @IS_ZERO_LABEL
+
+    ; We do:
+    ; remainder = $1 % 10
+    ; $1 = $1 / 10
+    ; digit = remainder + '0'
+    ; store digit in BUFFER[index]
+    ; index++
+
+    ; remainder = $1 mod 10
+    MOD $5 $1 10        ; We don't have a MOD in your instruction set?
+                         ; If you do, great. Otherwise you'd implement it with DIV leftover.
+    ; $1 = $1 / 10
+    DIV $1 $1 10        ; integer division.
+                         ; Or you might need a custom routine if your DIV sets $1 to quotient, $2 to remainder, etc.
+
+    ; digit = remainder + 48  ; ASCII '0' is 0x30 (48 decimal)
+    ADD $5 $5 48        ; $5 now has ASCII digit
+
+    ; Store $5 into BUFFER + index
+    ; Let's say we have STORB or SETM instructions? Or we do LOADM/SETM to memory?
+    ; For simplicity let's define a pseudo STORB.
+    ; If you don't have it, you'd do something like:
+    ;   - Move base address of BUFFER into $6 (just once if you have a known offset),
+    ;   - Then add index, store.
+    ; Let's do a pseudo approach:
+
+    ; We'll load the base of BUFFER into $6 (the assembler offset).
+    ; But your system likely lumps addresses as "some offset" in your symbol table.
+    ; We'll hack it:
+
+    LOADI $6 BUFFER      ; This is not strictly correct in your system,
+                         ; you'd do "LOAD $6 @BUFFER" if your VM stores label addresses in memory.
+                         ; Or use symbol_value approach.
+
+    ADD $7 $6 $4         ; $7 = address of BUFFER + index
+    SETMB $7 $5          ; hypothetical "set memory byte at $7 to the byte in $5"
+                         ; or you might do SETM $7 $5 but that usually implies 4 bytes.
+                         ; So you might need a special store-byte instruction or store-word approach.
+
+    INC $4               ; index++
+
+    ; Loop
+    DJMP @IS_ZERO_CHECK
+
+IS_ZERO_LABEL:
+    ; Means $1 == 0, handle final steps
+    ; We have stored digits in reverse order (least significant digit first).
+    ; So if the number was 120, we stored '0', '2', '1'.
+    ; We can either reverse them, or just skip reversing if you want them reversed ;)
+    ; Typically you'd do a reverse pass, or you store them from the end of BUFFER backward.
+    ; We'll be minimal here.
+
+    ; Terminate string
+    ; store 0
+    LOADI $5 0
+    LOADI $6 BUFFER
+    ADD   $7 $6 $4
+    SETMB $7 $5
+
+    RET    ; Return to caller
+

@@ -14,10 +14,11 @@ pub fn get_lumi_header(read_only_data_length: usize) -> Vec<u8> {
   }
   
   while header.len() <= LUMI_HEADER_LENGTH {
-    header.push(0u8);
+    header.push(0x11u8);
   }
   
   // calculate and write the starting offset for the VM to know where the RO section ends
+  debug!("Header: {:?}", header);
   debug!("RO Length: {}", read_only_data_length);
   let mut wtr: Vec<u8> = vec![];
   wtr.write_u32::<LittleEndian>(read_only_data_length as u32)
@@ -27,6 +28,7 @@ pub fn get_lumi_header(read_only_data_length: usize) -> Vec<u8> {
   }
   
   header.append(&mut wtr);
+  debug!("Header: {:?}", header);
   header
 }
 

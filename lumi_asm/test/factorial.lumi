@@ -1,0 +1,27 @@
+; Factorial program with .data and .code sections
+; Input: N = 5 (stored in the .data section)
+; Output: Factorial result (printed)
+
+.data
+N: .integer 5                 ; Read-only variable for storing the input number N
+RESULT: .integer 1            ; Initialize the factorial result to 1
+COUNTER: .integer 1           ; Initialize the counter to 1
+CONST_X: .asciiz "Hello, world"
+CONST_Y: .float 1.234
+
+.code
+START:
+    LOAD $0 @N        ; Load the input number N into register $0 from .data
+    LOAD $1 @RESULT   ; Load the factorial result (1 initially) into register $1
+    LOAD $2 @COUNTER  ; Load the counter (1 initially) into register $2
+
+FACTORIAL_LOOP:
+    MUL $1 $1 $2      ; Multiply the factorial result ($1 = $1 * $2)
+    INC $2            ; Increment counter ($2 += 1)
+    EQ $2 $0          ; Check if counter has reached N
+    JMPE END          ; If counter == N, jump to end
+    JMP @FACTORIAL_LOOP ; Otherwise, repeat the loop
+
+END:
+    PRTS $1           ; Print the result stored in $1 (factorial output)
+    HLT               ; Halt execution
